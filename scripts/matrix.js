@@ -233,48 +233,78 @@ class Vector extends Matrix {
 
 function mat4x4identity() {
     var result = new Matrix(4, 4);
-    
+    result.set([[1,0,0,0],
+                [0,1,0,0],
+                [0,0,1,0],
+                [0,0,0,1]]);
     return result;
 }
 
 function mat4x4translate(tx, ty, tz) {
     var result = new Matrix(4, 4);
-    
+    result.set([[1,0,0,tx],
+                [0,1,0,ty],
+                [0,0,1,tz],
+                [0,0,0,1]]);
     return result;
 }
 
 function mat4x4scale(sx, sy, sz) {
     var result = new Matrix(4, 4);
-    
+    result.set([[sx,0,0,0],
+                [0,sy,0,0],
+                [0,0,sz,0],
+                [0,0,0,1]]);    
     return result;
 }
 
 function mat4x4rotatex(theta) {
     var result = new Matrix(4, 4);
-    
+    var cosTheta = Math.cos(theta);
+    var sinTheta = Math.sin(theta);
+    result.set([[1,0,0,0],
+                [0,cosTheta,-sinTheta,0],
+                [0,sinTheta,cosTheta,0],
+                [0,0,0,1]]);
     return result;
 }
 
 function mat4x4rotatey(theta) {
     var result = new Matrix(4, 4);
-    
+    var cosTheta = Math.cos(theta);
+    var sinTheta = Math.sin(theta);
+    result.set([[cosTheta,0,sinTheta,0],
+                [0,1,0,0],
+                [-sinTheta,0,cosTheta,0],
+                [0,0,0,1]]);
     return result;
 }
 
 function mat4x4rotatez(theta) {
     var result = new Matrix(4, 4);
-    
+    var cosTheta = Math.cos(theta);
+    var sinTheta = Math.sin(theta);
+    result.set([[cosTheta,-sinTheta,0,0],
+                [sinTheta,cosTheta,0,0],
+                [0,0,1,0],
+                [0,0,0,1]]);
     return result;
 }
 
 function mat4x4shearxy(shx, shy) {
     var result = new Matrix(4, 4);
-    
+    result.set([[1,0,shx,0],
+                [0,1,shy,0],
+                [0,0,1,0],
+                [0,0,0,1]]);
     return result;
 }
 
 function mat4x4parallel(vrp, vpn, vup, prp, clip) {
     // 1. translate VRP to the origin
+    var vrpMatrix = new Matrix(1,4);
+    vrpMatrix.set([[vrp.x], [vrp.y], [vrp.z], [1]]);
+    
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis, 
     //    u-axis becomes the x-axis, and v-axis becomes the y-axis
     // 3. shear such that the DOP becomes parallel to the z-axis
