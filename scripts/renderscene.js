@@ -55,7 +55,10 @@ function Init() {
 
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
-    console.log(scene);
+    console.log("In draw seen: " + scene);
+    // 1 Calcualte the mat4x4perspective or
+    // First take seen and convert the vertex vectors using
+
 }
 
 // Called when user selects a new scene JSON file
@@ -85,7 +88,7 @@ function LoadNewScene() {
                 scene.models[i].center = Vector4(scene.models[i].center[0],
                                                  scene.models[i].center[1],
                                                  scene.models[i].center[2],
-                                                 1);
+                                                 1)
             }
         }
 
