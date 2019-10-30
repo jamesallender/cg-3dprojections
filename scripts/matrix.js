@@ -329,19 +329,62 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
     var Sparz = 1/(clip[4]-clip[5]);
     var CW_TranslateMatrix = mat4x4translate(-CWx, -CWy, -clip[4]);                         
     var ScaleMatrix = mat4x4scale(Sparx, Spary, Sparz);
-    
-    return var Npar = ScaleMatrix.mult(CW_TranslateMatrix.mult(shparMatrix.mult(rotateMatrix.mult(translateMatrix))));
+
+    var Npar = ScaleMatrix.mult(CW_TranslateMatrix.mult(shparMatrix.mult(rotateMatrix.mult(translateMatrix))));
+
+    return Npar;
 }
 
 function mat4x4perspective(vrp, vpn, vup, prp, clip) {
+    let n_axis = vpn.normalize(); //(normialize vpn to length 1)
+    let u_axis = vup.normalize().cross(n_axis); //normalized vup cross n axis
+    let v_axis = n_axis.cross(u_axis);
+
     // 1. translate VRP to the origin
-    // 2. rotate VRC such that n-axis (VPN) becomes the z-axis, 
-    //    u-axis becomes the x-axis, and v-axis becomes the y-axis
+    let trans_vrp_to_origin = mat4x4translate(-vrp.x, -vrp.y, -vrp.z);
+
+    // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
+    //    u-axis becomes the x-axis, and v-axis (vup?) becomes the y-axis
+    let rotate_axis_mtx = new Matrix(4,4);
+    rotate_axis_mtx.values([[u_axis.x, u_axis.y, u_axis.z, 0],
+        [n_axis.x, n_axis.y, n_axis.z, 0],
+        [v_axis.x, v_axis.y, v_axis.z, 0],
+        [0,        0,        0,        1]]);
+
     // 3. translate PRP to the origin
+    let trans_to_origin_mtx = mat4x4translate(-prp.x, -prp.y, -prp.z);
+
     // 4. shear such that the center line of the view volume becomes the z-axis
+    let cop = prp;
+    let shx_par = -cop.x/cop.z;
+    let shy_par = -cop.y/cop.z;
+
+    let shear_mtx = mat4x4shearxy(shx_par, shy_par);
+
     // 5. scale into canonical view volume (truncated pyramid)
+    //clip (array - umin, umax, vmin, vmax, front, back)
+    let umin = clip[0];
+    let umax = clip[1];
+    let vmin = clip[2];
+    let vmax = clip[3];
+    let front = clip[4];
+    let back = clip[5];
+
+    let vrpz = -(prp.z);
+
+    let sperx = ((2 * vrpz)/((umax-umin) * (vrpz + back)));
+    let spery = ((2 * vrpz)/((vmax-vmin) * (vrpz + back)));
+    let sperz =((-1) / (vrpz + back));
+
+    let scale_mtx =  mat4x4scale(sperx, spery, sperz)
+
     //    (x = [z,-z], y = [z,-z], z = [-z_min,-1])
-    
+
+    // put it all together
+    // 𝑁_𝑝𝑒𝑟=𝑆_𝑝𝑒𝑟⋅〖𝑆𝐻〗_𝑝𝑎𝑟∙𝑇(−𝑃𝑅𝑃)⋅𝑅⋅𝑇(−𝑉𝑅𝑃)
+    let trans_mtx = scale_mtx.mult(shear_mtx.mult(trans_to_origin_mtx.mult(rotate_axis_mtx.mult(trans_vrp_to_origin))));
+    return trans_mtx;
+
 }
 
 function mat4x4mper(near) {
