@@ -302,11 +302,7 @@ function mat4x4shearxy(shx, shy) {
 
 function mat4x4parallel(vrp, vpn, vup, prp, clip) {
     // 1. translate VRP to the origin
-    var translateMatrix = new Matrix(4,4);
-    translateMatrix.values = [[1, 0, 0, -vrp.x],
-                              [0, 1, 0, -vrp.y],
-                              [0, 0, 1, -vrp.z],
-                              [0, 0, 0, 1]];
+    var translateMatrix = mat4x4translate(-vrp.x, -vrp.y, -vrp.z);
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
     //    u-axis becomes the x-axis, and v-axis becomes the y-axis
     var u_axis = vup.cross(n_axis).normalize();
