@@ -305,9 +305,12 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
     var translateMatrix = mat4x4translate(-vrp.x, -vrp.y, -vrp.z);
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
     //    u-axis becomes the x-axis, and v-axis becomes the y-axis
-    var u_axis = vup.cross(n_axis).normalize();
-    var v_axis = n_axis.cross(u_axis);
-    var n_axis = vpn.normalize();
+    vpn.normalize();
+    let n_axis = vpn; //(normialize vpn to length 1)
+    vup.normalize();
+    let u_axis = vup.cross(n_axis); //normalized vup cross n axis
+    let v_axis = n_axis.cross(u_axis);
+
     var rotateMatrix = new Matrix(4,4);
     rotateMatrix.values = [[u_axis.x, u_axis.y, u_axis.z, 0],
                            [v_axis.x, v_axis.y, v_axis.z, 0],
@@ -336,16 +339,7 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
 }
 
 function mat4x4perspective(vrp, vpn, vup, prp, clip) {
-    console.log("vrp");
-    console.log(vrp);
 
-    let n_vrp = vrp;
-    n_vrp.normalize();
-
-    console.log("n_vrp");
-    console.log(n_vrp);
-    console.log("vrp");
-    console.log(vrp);
 
 
     vpn.normalize();
