@@ -339,9 +339,6 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
 }
 
 function mat4x4perspective(vrp, vpn, vup, prp, clip) {
-
-
-
     vpn.normalize();
     let n_axis = vpn; //(normialize vpn to length 1)
     vup.normalize();

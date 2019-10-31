@@ -56,9 +56,9 @@ function Init() {
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
     console.log(scene);
-    console.log("mat4x4perspective: " +  mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip));
-    console.log("mat4x4parallel: " +  mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip));
-    // 1 Calcualte the mat4x4perspective or
+    console.log("mat4x4perspective: " +  JSON.stringify(mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip)));
+    console.log("mat4x4parallel: " +  JSON.stringify(mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip)));
+    // 1 Calcualte the perspective matrix
     // First take seen and convert the vertex vectors using
 
 }
