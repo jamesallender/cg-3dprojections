@@ -305,13 +305,11 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
     var translateMatrix = mat4x4translate(-vrp.x, -vrp.y, -vrp.z);
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
     //    u-axis becomes the x-axis, and v-axis becomes the y-axis
-
     vpn.normalize();
     let n_axis = vpn; //(normialize vpn to length 1)
     let u_axis = vup.cross(n_axis); //normalized vup cross n axis
     u_axis.normalize();
     let v_axis = n_axis.cross(u_axis);
-
 
     var rotateMatrix = new Matrix(4,4);
     rotateMatrix.values = [[u_axis.x, u_axis.y, u_axis.z, 0],
@@ -341,25 +339,13 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
 }
 
 function mat4x4perspective(vrp, vpn, vup, prp, clip) {
-    console.log("vrp: " + JSON.stringify(vrp));
-    console.log("vpn: " + JSON.stringify(vpn));
-    console.log("vup: " + JSON.stringify(vup));
-    console.log("prp: " + JSON.stringify(prp));
-    console.log("clip: " + JSON.stringify(clip));
     vpn.normalize();
     let n_axis = vpn; //(normialize vpn to length 1)
     let u_axis = vup.cross(n_axis); //normalized vup cross n axis
     u_axis.normalize();
     let v_axis = n_axis.cross(u_axis);
-
-    console.log("u_axis: " + JSON.stringify(u_axis));
-    console.log("v_axis: " + JSON.stringify(v_axis));
-    console.log("n_axis: " + JSON.stringify(n_axis));
-
     // 1. translate VRP to the origin
     let trans_vrp_to_origin = mat4x4translate(-vrp.x, -vrp.y, -vrp.z);
-    console.log("trans_vrp_to_origin mtx: " + JSON.stringify(trans_vrp_to_origin));
-
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
     //    u-axis becomes the x-axis, and v-axis (vup?) becomes the y-axis
     let rotate_axis_mtx = new Matrix(4,4);
@@ -367,12 +353,8 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
                               [v_axis.x, v_axis.y, v_axis.z, 0],
                               [n_axis.x, n_axis.y, n_axis.z, 0],
                               [0,        0,        0,        1]];
-    console.log("rotate_axis_mtx: " + JSON.stringify(rotate_axis_mtx));
-
     // 3. translate PRP to the origin
     let trans_to_origin_mtx = mat4x4translate(-prp.x, -prp.y, -prp.z);
-    console.log("trans_to_origin_mtx: " + JSON.stringify(trans_to_origin_mtx));
-
     // 4. shear such that the center line of the view volume becomes the z-axis
     // DOP = CW - PRP;
     var CW = [(clip[0]+clip[1])/2, (clip[2]+clip[3])/2, 0];
@@ -380,8 +362,6 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
     var shx_par = -DOP[0]/DOP[2];
     var shy_par = -DOP[1]/DOP[2];
     let shear_mtx = mat4x4shearxy(shx_par, shy_par);
-    console.log("shear_mtx: " + JSON.stringify(shear_mtx));
-
     // 5. scale into canonical view volume (truncated pyramid)
     //clip (array - umin, umax, vmin, vmax, front, back)
     let umin = clip[0];
@@ -398,16 +378,11 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
     let sperz =((-1) / (vrpz + back));
 
     let scale_mtx =  mat4x4scale(sperx, spery, sperz)
-    console.log("scale_mtx: " + JSON.stringify(scale_mtx));
-
     //    (x = [z,-z], y = [z,-z], z = [-z_min,-1])
 
     // put it all together
-    // 𝑁_𝑝𝑒𝑟=𝑆_𝑝𝑒𝑟⋅〖𝑆𝐻〗_𝑝𝑎𝑟∙𝑇(−𝑃𝑅𝑃)⋅𝑅⋅𝑇(−𝑉𝑅𝑃)
     let trans_mtx = scale_mtx.mult(shear_mtx.mult(trans_to_origin_mtx.mult(rotate_axis_mtx.mult(trans_vrp_to_origin))));
-    console.log("trans_mtx: " + JSON.stringify(trans_mtx));
     return trans_mtx;
-
 }
 
 function mat4x4mper(near) {
