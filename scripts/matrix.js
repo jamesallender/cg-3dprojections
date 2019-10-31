@@ -336,8 +336,22 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
 }
 
 function mat4x4perspective(vrp, vpn, vup, prp, clip) {
-    let n_axis = vpn.normalize(); //(normialize vpn to length 1)
-    let u_axis = vup.normalize().cross(n_axis); //normalized vup cross n axis
+    console.log("vrp");
+    console.log(vrp);
+
+    let n_vrp = vrp;
+    n_vrp.normalize();
+
+    console.log("n_vrp");
+    console.log(n_vrp);
+    console.log("vrp");
+    console.log(vrp);
+
+
+    vpn.normalize();
+    let n_axis = vpn; //(normialize vpn to length 1)
+    vup.normalize();
+    let u_axis = vup.cross(n_axis); //normalized vup cross n axis
     let v_axis = n_axis.cross(u_axis);
 
     // 1. translate VRP to the origin
@@ -346,10 +360,10 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
     //    u-axis becomes the x-axis, and v-axis (vup?) becomes the y-axis
     let rotate_axis_mtx = new Matrix(4,4);
-    rotate_axis_mtx.values([[u_axis.x, u_axis.y, u_axis.z, 0],
+    rotate_axis_mtx.values = [[u_axis.x, u_axis.y, u_axis.z, 0],
         [n_axis.x, n_axis.y, n_axis.z, 0],
         [v_axis.x, v_axis.y, v_axis.z, 0],
-        [0,        0,        0,        1]]);
+        [0,        0,        0,        1]];
 
     // 3. translate PRP to the origin
     let trans_to_origin_mtx = mat4x4translate(-prp.x, -prp.y, -prp.z);
