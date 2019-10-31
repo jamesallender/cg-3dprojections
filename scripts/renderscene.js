@@ -56,11 +56,28 @@ function Init() {
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
     console.log(scene);
-    console.log("mat4x4perspective: " +  JSON.stringify(mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip)));
-    console.log("mat4x4parallel: " +  JSON.stringify(mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip)));
-    // 1 Calcualte the perspective matrix
-    // First take seen and convert the vertex vectors using
 
+    // 1 Calcualte the perspective matrix
+    // Get transformation matrix to apply to verticies of objects
+    if (scene.view.type === "perspective"){
+        let transformation_matrix = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+        console.log("mat4x4perspective: " +  JSON.stringify(transformation_matrix));
+
+    }
+    else if (scene.view.type === "parallel"){
+        let transformation_matrix = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+        console.log("mat4x4parallel: " +  JSON.stringify(transformation_matrix));
+    }
+    else{
+        console.log("unable to interprit: " + scene.view.type);
+    }
+
+    // 2 apply transformation matrix to verticies of moddles
+    for (let i = 0; i < scene.models.length; i++) {
+        for (let k = 0; k < scene.models[i].vertices.length; k++) {
+            console.log("modle " + i + " verticie " + k + " " + scene.models[i].vertices[k])
+        }
+    }
 }
 
 // Called when user selects a new scene JSON file
@@ -95,29 +112,28 @@ function LoadNewScene() {
                 let height = scene.models[i].height;
                 console.log("height: " + JSON.stringify(height));
 
-                let vertices = [];
-                let edges = [];
+                scene.models[i].vertices = [];
+                scene.models[i].edges = [];
 
-                vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]+width, 1));
-                vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]-width, 1));
-                vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]+width, 1));
-                vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]-width, 1));
-                vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]+width, 1));
-                vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]-width, 1));
-                vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]+width, 1));
-                vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]-width, 1));
-                console.log("vertices:");
-                console.log(vertices);
-                edges.push([0, 1, 2, 3]);
-                edges.push([4, 5, 6, 7]);
-                edges.push([0, 4]);
-                edges.push([1, 5]);
-                edges.push([2, 6]);
-                edges.push([3, 7]);
-                console.log("edges:");
-                console.log(edges);
+                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]+width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]-width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]+width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]-width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]+width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]-width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]+width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]-width, 1));
+                console.log("scene.models[i].vertices:");
+                console.log(scene.models[i].vertices);
 
-
+                scene.models[i].edges .push([0, 1, 2, 3]);
+                scene.models[i].edges .push([4, 5, 6, 7]);
+                scene.models[i].edges .push([0, 4]);
+                scene.models[i].edges .push([1, 5]);
+                scene.models[i].edges .push([2, 6]);
+                scene.models[i].edges .push([3, 7]);
+                console.log("scene.models[i].edges :");
+                console.log(scene.models[i].edges );
             }
 
             else {
