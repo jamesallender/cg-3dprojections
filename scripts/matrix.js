@@ -387,6 +387,7 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
     //    (x = [z,-z], y = [z,-z], z = [-z_min,-1])
 
     // put it all together
+    // 𝑁_𝑝𝑒𝑟=𝑆_𝑝𝑒𝑟⋅〖𝑆𝐻〗_𝑝𝑎𝑟∙𝑇(−𝑃𝑅𝑃)⋅𝑅⋅𝑇(−𝑉𝑅𝑃)
     let trans_mtx = scale_mtx.mult(shear_mtx.mult(trans_to_origin_mtx.mult(rotate_axis_mtx.mult(trans_vrp_to_origin))));
     return trans_mtx;
 
