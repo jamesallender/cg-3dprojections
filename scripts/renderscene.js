@@ -86,6 +86,40 @@ function LoadNewScene() {
                                                           1);
                 }
             }
+
+            else if(scene.models[i].type === 'cube') {
+                let center = scene.models[i].center;
+                console.log("center: " + JSON.stringify(center));
+                let width = scene.models[i].width;
+                console.log("width: " + JSON.stringify(width));
+                let height = scene.models[i].height;
+                console.log("height: " + JSON.stringify(height));
+
+                let vertices = [];
+                let edges = [];
+
+                vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]+width, 1));
+                vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]-width, 1));
+                vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]+width, 1));
+                vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]-width, 1));
+                vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]+width, 1));
+                vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]-width, 1));
+                vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]+width, 1));
+                vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]-width, 1));
+                console.log("vertices:");
+                console.log(vertices);
+                edges.push([0, 1, 2, 3]);
+                edges.push([4, 5, 6, 7]);
+                edges.push([0, 4]);
+                edges.push([1, 5]);
+                edges.push([2, 6]);
+                edges.push([3, 7]);
+                console.log("edges:");
+                console.log(edges);
+
+
+            }
+
             else {
                 scene.models[i].center = Vector4(scene.models[i].center[0],
                                                  scene.models[i].center[1],
