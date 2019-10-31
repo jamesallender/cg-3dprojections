@@ -363,10 +363,11 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
     let trans_to_origin_mtx = mat4x4translate(-prp.x, -prp.y, -prp.z);
 
     // 4. shear such that the center line of the view volume becomes the z-axis
-    let cop = prp;
-    let shx_par = -cop.x/cop.z;
-    let shy_par = -cop.y/cop.z;
-
+    // DOP = CW - PRP;
+    var CW = [(clip[0]+clip[1])/2, (clip[2]+clip[3])/2, 0];
+    var DOP = [CW[0]-prp.x, CW[1]-prp.y, CW[2]-prp.z];
+    var shx_par = -DOP[0]/DOP[2];
+    var shy_par = -DOP[1]/DOP[2];
     let shear_mtx = mat4x4shearxy(shx_par, shy_par);
 
     // 5. scale into canonical view volume (truncated pyramid)
