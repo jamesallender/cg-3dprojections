@@ -95,6 +95,9 @@ function LoadNewScene() {
         scene.view.prp = Vector3(scene.view.prp[0], scene.view.prp[1], scene.view.prp[2]);
 
         for (let i = 0; i < scene.models.length; i++) {
+            console.log("Working on: " + JSON.stringify(scene.models[i].type));
+
+            //Generic model
             if (scene.models[i].type === 'generic') {
                 for (let j = 0; j < scene.models[i].vertices.length; j++) {
                     scene.models[i].vertices[j] = Vector4(scene.models[i].vertices[j][0],
@@ -104,6 +107,7 @@ function LoadNewScene() {
                 }
             }
 
+            //Cube (but actually box like rectangle thing)
             else if(scene.models[i].type === 'cube') {
                 let center = scene.models[i].center;
                 console.log("center: " + JSON.stringify(center));
@@ -111,18 +115,20 @@ function LoadNewScene() {
                 console.log("width: " + JSON.stringify(width));
                 let height = scene.models[i].height;
                 console.log("height: " + JSON.stringify(height));
+                let depth = scene.models[i].depth;
+                console.log("depth: " + JSON.stringify(depth));
 
                 scene.models[i].vertices = [];
                 scene.models[i].edges = [];
 
-                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]+width, 1));
-                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]+height, center[2]-width, 1));
-                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]+width, 1));
-                scene.models[i].vertices.push(Vector4( center[0]+width,  center[1]-height, center[2]-width, 1));
-                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]+width, 1));
-                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]+height, center[2]-width, 1));
-                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]+width, 1));
-                scene.models[i].vertices.push(Vector4( center[0]-width,  center[1]-height, center[2]-width, 1));
+                scene.models[i].vertices.push(Vector4( center[0]+width/2,  center[1]+height/2, center[2]+depth/2, 1));
+                scene.models[i].vertices.push(Vector4( center[0]+width/2,  center[1]+height/2, center[2]-depth/2, 1));
+                scene.models[i].vertices.push(Vector4( center[0]+width/2,  center[1]-height/2, center[2]+depth/2, 1));
+                scene.models[i].vertices.push(Vector4( center[0]+width/2,  center[1]-height/2, center[2]-depth/2, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width/2,  center[1]+height/2, center[2]+depth/2, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width/2,  center[1]+height/2, center[2]-depth/2, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width/2,  center[1]-height/2, center[2]+depth/2, 1));
+                scene.models[i].vertices.push(Vector4( center[0]-width/2,  center[1]-height/2, center[2]-depth/2, 1));
                 console.log("scene.models[i].vertices:");
                 console.log(scene.models[i].vertices);
 
@@ -134,6 +140,29 @@ function LoadNewScene() {
                 scene.models[i].edges .push([3, 7]);
                 console.log("scene.models[i].edges :");
                 console.log(scene.models[i].edges );
+            }
+
+            else if(scene.models[i].type === 'cylinder') {
+                let center = scene.models[i].center;
+                console.log("center: " + JSON.stringify(center));
+                let radius = scene.models[i].radius;
+                console.log("radius: " + JSON.stringify(radius));
+                let height = scene.models[i].height;
+                console.log("height: " + JSON.stringify(height));
+                let sides = scene.models[i].sides;
+                console.log("sides: " + JSON.stringify(sides));
+
+                scene.models[i].vertices = [];
+                scene.models[i].edges = [];
+
+                let increment_radians = (2 * Math.PI) / sides;
+                let current_sum_radians = 0;
+                for (let i = 0; i < sides; i ++){
+                    let x = center[0] + radius * math.cos(current_sum_radians);
+                    let y = center[1] - (height / 2);
+                    let z = center[2] + radius * Math.sin(current_sum_radians)
+                    current_sum_radians += increment_radians;
+                }
             }
 
             else {
