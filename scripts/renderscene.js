@@ -55,6 +55,7 @@ function Init() {
 
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
+    /*
     console.log(scene);
 
     // 1 Calcualte the perspective matrix
@@ -71,11 +72,40 @@ function DrawScene() {
     else{
         console.log("unable to interprit: " + scene.view.type);
     }
-
+    
     // 2 apply transformation matrix to verticies of moddles
     for (let i = 0; i < scene.models.length; i++) {
         for (let k = 0; k < scene.models[i].vertices.length; k++) {
-            console.log("modle " + i + " verticie " + k + " " + scene.models[i].vertices[k])
+            console.log("modle " + i + " verticie " + k + " " + scene.models[i].vertices[k]);
+        }
+    }*/
+    
+    var Mper = mat4x4mper(-1);
+    var Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+    var arrayOfMatrixVertex = [];
+    
+    var w = 800;
+    var h = 600;
+    var transAndScale = new Matrix(4,4);
+    transAndScale.values = [[w/2,0,0,w/2],
+                            [0,h/2,0,h/2],
+                            [0,0,1,0],
+                            [0,0,0,1]];
+    for (let k = 0; k < scene.models[0].vertices.length; k++) {
+        //arrayOfMatrixVertex[k] = Mper.mult(Nper.mult(scene.models[0].vertices[k]));
+        arrayOfMatrixVertex[k] = Mper.mult(transAndScale.mult(Nper.mult(scene.models[0].vertices[k])));
+    }
+    
+    var arrayVector = [];
+    for (let i = 0; i < arrayOfMatrixVertex.length; i++) {
+        arrayVector[i] = new Vector4(arrayOfMatrixVertex[i].values[0][0], arrayOfMatrixVertex[i].values[1][0], arrayOfMatrixVertex[i].values[2][0], arrayOfMatrixVertex[i].values[3][0]);
+    }
+    for (let v = 0; v < scene.models.length; v++) {
+        for (let t = 0; t < scene.models[v].edges.length; t++) {
+            for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
+                //console.log(arrayVector[scene.models[v].edges[t][u]].x, arrayVector[scene.models[v].edges[t][u]].y, arrayVector[scene.models[v].edges[t][u+1]].x, arrayVector[scene.models[v].edges[t][u+1]].y);
+                DrawLine(arrayVector[scene.models[v].edges[t][u]].x, arrayVector[scene.models[v].edges[t][u]].y, arrayVector[scene.models[v].edges[t][u+1]].x, arrayVector[scene.models[v].edges[t][u+1]].y);
+            }
         }
     }
 }
