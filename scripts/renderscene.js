@@ -55,26 +55,25 @@ function Init() {
 
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
+    console.log("in DrawScene")
     ctx.clearRect(0, 0, view.width, view.height);
-
     console.log(scene);
-    var w = 800;
-    var h = 600;
-    var arrayOfMatrixVertex;
-    var transformation_matrix;
-    var transAndScale = new Matrix(4,4);
 
-    // 1 Calcualte the perspective matrix
-    // Get transformation matrix to apply to verticies of objects
+    let arrayOfMatrixVertex;
+    let transformation_matrix;
+    let projection_matrix;
+    let transAndScale = new Matrix(4,4);
+    transAndScale.values = [[view.width/2,0,0,view.width/2],
+        [0,view.height/2,0,view.height/2],
+        [0,0,1,0],
+        [0,0,0,1]];
+    console.log("transAndScale: " +  JSON.stringify(transAndScale));
+
+    // perspective seen
     if (scene.view.type === "perspective"){
-        console.log("in perspective")
+        console.log("in perspective");
         transformation_matrix = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
         console.log("mat4x4perspective: " +  JSON.stringify(transformation_matrix));
-
-        transAndScale.values = [[w/2,0,0,w/2],
-                                [0,h/2,0,h/2],
-                                [0,0,1,0],
-                                [0,0,0,1]];
 
         arrayOfMatrixVertex = [];
         for (let k = 0; k < scene.models[0].vertices.length; k++) {
@@ -82,20 +81,17 @@ function DrawScene() {
         }
     }
 
+    // Parallel seen
     else if (scene.view.type === "parallel"){
-        console.log("in parallel")
+        console.log("in parallel");
         transformation_matrix = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
         console.log("mat4x4parallel: " +  JSON.stringify(transformation_matrix));
-        var projection_matrix = new Matrix(4, 4);
+        projection_matrix = new Matrix(4, 4);
         projection_matrix.values = [[1,0,0,0],
                                     [0,1,0,0],
                                     [0,0,0,0],
                                     [0,0,0,1]];
-
-        transAndScale.values = [[w/2,0,0,w/2],
-                                [0,h/2,0,h/2],
-                                [0,0,1,0],
-                                [0,0,0,1]];
+        console.log("projection_matrix: " +  JSON.stringify(projection_matrix));
 
         arrayOfMatrixVertex = [];
         for (let k = 0; k < scene.models[0].vertices.length; k++) {
@@ -103,9 +99,12 @@ function DrawScene() {
         }
     }
 
-else{
-        console.log("unable to interprit: " + scene.view.type);
-    }
+    // Fall through
+    else{
+            console.log("unable to interprit: " + scene.view.type);
+        }
+
+    console.log("arrayOfMatrixVertex: " +  JSON.stringify(arrayOfMatrixVertex));
 
     var arrayVector = [];
     for (let i = 0; i < arrayOfMatrixVertex.length; i++) {
@@ -174,6 +173,8 @@ function LoadNewScene() {
 
                 console.log("scene.models[i].vertices:");
                 console.log(scene.models[i].vertices);
+                console.log("scene.models[i].vertices: " +  JSON.stringify(scene.models[i].vertices));
+
 
                 scene.models[i].edges .push([0, 1, 2, 3, 0]);
                 scene.models[i].edges .push([4, 5, 6, 7, 4]);
@@ -183,6 +184,8 @@ function LoadNewScene() {
                 scene.models[i].edges .push([3, 7]);
                 console.log("scene.models[i].edges :");
                 console.log(scene.models[i].edges );
+                console.log("scene.models[i].edges: " +  JSON.stringify(scene.models[i].edges));
+
             }
 
             else if(scene.models[i].type === 'cylinder') {
