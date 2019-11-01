@@ -55,47 +55,69 @@ function Init() {
 
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
-    /*
+    ctx.clear;
+
     console.log(scene);
+    var w = 800;
+    var h = 600;
 
     // 1 Calcualte the perspective matrix
     // Get transformation matrix to apply to verticies of objects
     if (scene.view.type === "perspective"){
-        let transformation_matrix = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+        console.log("in perspective")
+        var transformation_matrix = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
         console.log("mat4x4perspective: " +  JSON.stringify(transformation_matrix));
+        // var projection_matrix = mat4x4mper(-1);
 
+        var arrayOfMatrixVertex = [];
+
+        var transAndScale = new Matrix(4,4);
+        transAndScale.values = [[w/2,0,0,w/2],
+            [0,h/2,0,h/2],
+            [0,0,1,0],
+            [0,0,0,1]];
+        for (let k = 0; k < scene.models[0].vertices.length; k++) {
+            //arrayOfMatrixVertex[k] = Mper.mult(Nper.mult(scene.models[0].vertices[k]));
+            // arrayOfMatrixVertex[k] = projection_matrix.mult(transAndScale.mult(transformation_matrix.mult(scene.models[0].vertices[k])));
+            arrayOfMatrixVertex[k] = transAndScale.mult(transformation_matrix.mult(scene.models[0].vertices[k]));
+        }
     }
+
     else if (scene.view.type === "parallel"){
-        let transformation_matrix = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+        console.log("in parallel")
+        var transformation_matrix = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
         console.log("mat4x4parallel: " +  JSON.stringify(transformation_matrix));
+        var projection_matrix = new Matrix(4, 4);
+        projection_matrix.values = [[1,0,0,0],
+                                    [0,1,0,0],
+                                    [0,0,0,0],
+                                    [0,0,0,1]];
+
+        var arrayOfMatrixVertex = [];
+
+        var transAndScale = new Matrix(4,4);
+        transAndScale.values = [[w/2,0,0,w/2],
+            [0,h/2,0,h/2],
+            [0,0,1,0],
+            [0,0,0,1]];
+        for (let k = 0; k < scene.models[0].vertices.length; k++) {
+            //arrayOfMatrixVertex[k] = Mper.mult(Nper.mult(scene.models[0].vertices[k]));
+            arrayOfMatrixVertex[k] = projection_matrix.mult(transAndScale.mult(transformation_matrix.mult(scene.models[0].vertices[k])));
+        }
     }
-    else{
+
+else{
         console.log("unable to interprit: " + scene.view.type);
     }
     
-    // 2 apply transformation matrix to verticies of moddles
-    for (let i = 0; i < scene.models.length; i++) {
-        for (let k = 0; k < scene.models[i].vertices.length; k++) {
-            console.log("modle " + i + " verticie " + k + " " + scene.models[i].vertices[k]);
-        }
-    }*/
-    
-    var Mper = mat4x4mper(-1);
-    var Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
-    var arrayOfMatrixVertex = [];
-    
-    var w = 800;
-    var h = 600;
-    var transAndScale = new Matrix(4,4);
-    transAndScale.values = [[w/2,0,0,w/2],
-                            [0,h/2,0,h/2],
-                            [0,0,1,0],
-                            [0,0,0,1]];
-    for (let k = 0; k < scene.models[0].vertices.length; k++) {
-        //arrayOfMatrixVertex[k] = Mper.mult(Nper.mult(scene.models[0].vertices[k]));
-        arrayOfMatrixVertex[k] = Mper.mult(transAndScale.mult(Nper.mult(scene.models[0].vertices[k])));
-    }
-    
+    // // 2 apply transformation matrix to verticies of moddles
+    // for (let i = 0; i < scene.models.length; i++) {
+    //     for (let k = 0; k < scene.models[i].vertices.length; k++) {
+    //         console.log("modle " + i + " verticie " + k + " " + scene.models[i].vertices[k]);
+    //     }
+    // }
+    //
+
     var arrayVector = [];
     for (let i = 0; i < arrayOfMatrixVertex.length; i++) {
         arrayVector[i] = new Vector4(arrayOfMatrixVertex[i].values[0][0], arrayOfMatrixVertex[i].values[1][0], arrayOfMatrixVertex[i].values[2][0], arrayOfMatrixVertex[i].values[3][0]);
@@ -188,7 +210,7 @@ function LoadNewScene() {
                 let increment_radians = (2 * Math.PI) / sides;
                 let current_sum_radians = 0;
                 for (let i = 0; i < sides; i ++){
-                    let x = center[0] + radius * math.cos(current_sum_radians);
+                    let x = center[0] + radius * Math.cos(current_sum_radians);
                     let y = center[1] - (height / 2);
                     let z = center[2] + radius * Math.sin(current_sum_radians)
                     current_sum_radians += increment_radians;
