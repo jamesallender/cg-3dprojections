@@ -344,6 +344,7 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
     let u_axis = vup.cross(n_axis); //normalized vup cross n axis
     u_axis.normalize();
     let v_axis = n_axis.cross(u_axis);
+    
     // 1. translate VRP to the origin
     let trans_vrp_to_origin = mat4x4translate(-vrp.x, -vrp.y, -vrp.z);
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
@@ -389,10 +390,7 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
 function mat4x4mper(near) {
     // convert perspective canonical view volume into the parallel one
     var result = new Matrix(4, 4);
-    result.values = [[1,0,0,0],
-                     [0,1,0,0],
-                     [0,0,1,0],
-                     [0,0,1/near,0]];
+    
     return result;
 }
 
