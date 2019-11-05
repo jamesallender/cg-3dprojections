@@ -77,14 +77,14 @@ function DrawScene() {
         
     // perspective seen
     if (scene.view.type === "perspective"){
-        console.log("in perspective");
+        // console.log("in perspective");
         Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
-        console.log("Nper: "  + JSON.stringify(Nper));
+        // console.log("Nper: "  + JSON.stringify(Nper));
 
         Mper = mat4x4mper(-1);
-        console.log("Mper: "  + JSON.stringify(Mper));
+        // console.log("Mper: "  + JSON.stringify(Mper));
 
-        console.log("transAndScale: "  + JSON.stringify(transAndScale));
+        // console.log("transAndScale: "  + JSON.stringify(transAndScale));
 
         for (let k = 0; k < scene.models[0].vertices.length; k++) {
             // console.log("Vertex befor: "  + JSON.stringify(scene.models[0].vertices[k]));
@@ -95,10 +95,15 @@ function DrawScene() {
             let temp_transAndScale = transAndScale.mult(temp_Mper);
             console.log("temp_transAndScale: "  + JSON.stringify(temp_transAndScale));
 
+            // plot_verticies.push(new Vector4(temp_transAndScale.values[0][0]/temp_transAndScale.values[3][0],
+            //                                 temp_transAndScale.values[1][0]/temp_transAndScale.values[3][0],
+            //                                 temp_transAndScale.values[2][0]/temp_transAndScale.values[3][0],
+            //                                 temp_transAndScale.values[3][0]/temp_transAndScale.values[3][0]));
+
             plot_verticies.push(new Vector4(temp_transAndScale.values[0][0],
-                                            temp_transAndScale.values[1][0],
-                                            temp_transAndScale.values[2][0],
-                                            temp_transAndScale.values[3][0]));
+                temp_transAndScale.values[1][0],
+                temp_transAndScale.values[2][0],
+                temp_transAndScale.values[3][0]));
         }
 
         console.log("plot_verticies: "  + JSON.stringify(plot_verticies));
