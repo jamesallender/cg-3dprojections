@@ -22,13 +22,6 @@ function Init() {
             vup: Vector3(0, 1, 0),
             prp: Vector3(14, 20, 26),
             clip: [-20, 20, -4, 36, 1, -50]
-            /*
-            vrp: Vector3(10,9, -30),
-            vpn: Vector3(0,0,1),
-            vup: Vector3(0, 1, 0),
-            prp: Vector3(0,0,18),
-            clip: [-11, 11, -11, 11, 1, -50]
-            */
         },
         models: [
             {
@@ -56,8 +49,31 @@ function Init() {
                 ]
             }
         ]
+        /*
+        view: {
+            type: "parallel",
+            vrp: [0, 0, 0],
+            vpn: [0, 0, 1],
+            vup: [0, 1, 0],
+            prp: [0, 0, 100],
+            clip: [-1, 17, -1, 17, 1, -50]
+        },
+        models: [
+            {
+                type: 'sphere',
+                center: [12, 10, -49],
+                radius: 3,
+                slices: 12,
+                stack: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            }
+        ]
+        */
     };
-
+    
     DrawScene();
 }
 
@@ -267,7 +283,10 @@ function LoadNewScene() {
                 scene.models[i].vertices = [];
                 scene.models[i].edges = [];
                 
+                var upperApex = [center[0], center[1]+radius, center[2]];
+                var lowerApex = [center[0], center[1]-radius, center[2]];
                 
+                for (let u = 0; u <
                 
             }
         }

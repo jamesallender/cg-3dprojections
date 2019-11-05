@@ -9,11 +9,11 @@
     },
     "models": [
         {
-            "type": "cone",
-            "centerOfBase": [12, 7, -49],
+            "type": "sphere",
+            "center": [12, 10, -49],
             "radius": 3,
-            "height": 10,
-            "sides": 12,
+            "slices": 12,
+            "stack": 12,
             "animation": {
                 "axis": "y",
                 "rps": 0.5
