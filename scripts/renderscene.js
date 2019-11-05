@@ -67,7 +67,7 @@ function DrawScene() {
     ctx.clearRect(0, 0, view.width, view.height);
     
     var arrayVector = [];
-    let arrayOfMatrixVertex = [];
+    let arrayOfVectorVertex = [];
     let transformation_matrix;
     let projection_matrix;
     let transAndScale = new Matrix(4,4);
@@ -75,9 +75,9 @@ function DrawScene() {
                             [0,view.height/2,0,view.height/2],
                             [0,0,1,0],
                             [0,0,0,1]];
-        
     // perspective seen
     if (scene.view.type === "perspective"){
+        ctx.clearRect(0, 0, view.width, view.height);
         console.log("in perspective");
         var Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
         var Mper = new Matrix(4, 4);
@@ -87,19 +87,7 @@ function DrawScene() {
                        [0,0,-1,0]];
         for (let j = 0; j < scene.models.length; j++) {           
             for (let k = 0; k < scene.models[j].vertices.length; k++) {
-                arrayOfMatrixVertex[k] = transAndScale.mult(Mper.mult(Nper.mult(scene.models[j].vertices[k])));
-            }
-        }
-        // convert 4*1 matrix to vector.
-        for (let i = 0; i < arrayOfMatrixVertex.length; i++) {
-            arrayVector[i] = new Vector4(arrayOfMatrixVertex[i].values[0][0], arrayOfMatrixVertex[i].values[1][0], arrayOfMatrixVertex[i].values[2][0], arrayOfMatrixVertex[i].values[3][0]);
-        }
-        // draw the lines
-        for (let v = 0; v < scene.models.length; v++) {
-            for (let t = 0; t < scene.models[v].edges.length; t++) {
-                for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
-                    DrawLine(arrayVector[scene.models[v].edges[t][u]].x, arrayVector[scene.models[v].edges[t][u]].y, arrayVector[scene.models[v].edges[t][u+1]].x, arrayVector[scene.models[v].edges[t][u+1]].y);
-                }
+                arrayOfVectorVertex[k] = Matrix.multiply(transAndScale, Mper, Nper, scene.models[j].vertices[k]);
             }
         }
     }
@@ -114,25 +102,27 @@ function DrawScene() {
                        [0,0,0,0],
                        [0,0,0,1]];
         //console.log("projection_matrix: " +  JSON.stringify(projection_matrix));
-        for (let j = 0; j < scene.models.length; j++) {
+        for (let j = 0; j < scene.models.length; j++) {           
             for (let k = 0; k < scene.models[j].vertices.length; k++) {
-                arrayOfMatrixVertex[k] = transAndScale.mult(Mpar.mult(Npar.mult(scene.models[j].vertices[k])));
-            }
-        }
-        for (let i = 0; i < arrayOfMatrixVertex.length; i++) {
-            arrayVector[i] = new Vector4(arrayOfMatrixVertex[i].values[0][0], arrayOfMatrixVertex[i].values[1][0], arrayOfMatrixVertex[i].values[2][0], arrayOfMatrixVertex[i].values[3][0]);
-        }
-        for (let v = 0; v < scene.models.length; v++) {
-            for (let t = 0; t < scene.models[v].edges.length; t++) {
-                for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
-                    DrawLine(arrayVector[scene.models[v].edges[t][u]].x, arrayVector[scene.models[v].edges[t][u]].y, arrayVector[scene.models[v].edges[t][u+1]].x, arrayVector[scene.models[v].edges[t][u+1]].y);
-                }
+                arrayOfVectorVertex[k] = Matrix.multiply(transAndScale, Mpar, Npar, scene.models[j].vertices[k]);
             }
         }
     }
-    else{
-        console.log("unable to interprit: " + scene.view.type);
+    
+    for (let i = 0; i < arrayOfVectorVertex.length; i++) {
+            arrayOfVectorVertex[i].x = arrayOfVectorVertex[i].x/arrayOfVectorVertex[i].w;
+            arrayOfVectorVertex[i].y = arrayOfVectorVertex[i].y/arrayOfVectorVertex[i].w;
+            arrayOfVectorVertex[i].z = arrayOfVectorVertex[i].z/arrayOfVectorVertex[i].w;
+    }
+    // draw the lines
+    for (let v = 0; v < scene.models.length; v++) {
+        for (let t = 0; t < scene.models[v].edges.length; t++) {
+            for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
+                DrawLine(arrayOfVectorVertex[scene.models[v].edges[t][u]].x, arrayOfVectorVertex[scene.models[v].edges[t][u]].y, 
+                         arrayOfVectorVertex[scene.models[v].edges[t][u+1]].x, arrayOfVectorVertex[scene.models[v].edges[t][u+1]].y);
+            }
         }
+    }
 }
 
 // Called when user selects a new scene JSON file
