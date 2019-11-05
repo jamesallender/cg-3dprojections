@@ -377,11 +377,12 @@ function mat4x4perspective(vrp, vpn, vup, prp, clip) {
     let spery = ((2 * vrpz)/((vmax-vmin) * (vrpz + back)));
     let sperz =((-1) / (vrpz + back));
 
-    let scale_mtx =  mat4x4scale(sperx, spery, sperz)
+    let scale_mtx =  mat4x4scale(sperx, spery, sperz);
     //    (x = [z,-z], y = [z,-z], z = [-z_min,-1])
 
     // put it all together
     let trans_mtx = scale_mtx.mult(shear_mtx.mult(trans_to_origin_mtx.mult(rotate_axis_mtx.mult(trans_vrp_to_origin))));
+    console.log("trans_mtx: "  + JSON.stringify(trans_mtx));
     return trans_mtx;
 }
 

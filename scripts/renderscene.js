@@ -58,10 +58,9 @@ function DrawScene() {
     // clean view
     ctx.clearRect(0, 0, view.width, view.height);
     
-    var arrayVector = [];
-    let arrayOfMatrixVertex = [];
-    let transformation_matrix;
-    let projection_matrix;
+    let plot_verticies = [];
+    let Nper;
+    let Mper;
     let transAndScale = new Matrix(4,4);
     transAndScale.values = [[view.width/2,0,0,view.width/2],
                             [0,view.height/2,0,view.height/2],
@@ -71,23 +70,43 @@ function DrawScene() {
     // perspective seen
     if (scene.view.type === "perspective"){
         console.log("in perspective");
-        var Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
-        var Mper = mat4x4mper(-1);
+        Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+        console.log("Nper: "  + JSON.stringify(Nper));
+
+        Mper = mat4x4mper(-1);
+        console.log("Mper: "  + JSON.stringify(Mper));
+
+        console.log("transAndScale: "  + JSON.stringify(transAndScale));
+
         for (let k = 0; k < scene.models[0].vertices.length; k++) {
-            arrayOfMatrixVertex[k] = transAndScale.mult(Mper.mult(Nper.mult(scene.models[0].vertices[k])));
+            // console.log("Vertex befor: "  + JSON.stringify(scene.models[0].vertices[k]));
+            let temp_Nper = Nper.mult(scene.models[0].vertices[k]);
+            // console.log("temp_Nper: "  + JSON.stringify(temp_Nper));
+            let temp_Mper = Mper.mult(temp_Nper);
+            // console.log("temp_Mper: "  + JSON.stringify(temp_Mper));
+            let temp_transAndScale = transAndScale.mult(temp_Mper);
+            console.log("temp_transAndScale: "  + JSON.stringify(temp_transAndScale));
+
+            plot_verticies.push(new Vector4(temp_transAndScale.values[0][0],
+                                            temp_transAndScale.values[1][0],
+                                            temp_transAndScale.values[2][0],
+                                            temp_transAndScale.values[3][0]));
         }
-        // convert 4*1 matrix to vector.
-        for (let i = 0; i < arrayOfMatrixVertex.length; i++) {
-            arrayVector[i] = new Vector4(arrayOfMatrixVertex[i].values[0][0], arrayOfMatrixVertex[i].values[1][0], arrayOfMatrixVertex[i].values[2][0], arrayOfMatrixVertex[i].values[3][0]);
-        }
+
+        console.log("plot_verticies: "  + JSON.stringify(plot_verticies));
+
         for (let v = 0; v < scene.models.length; v++) {
             for (let t = 0; t < scene.models[v].edges.length; t++) {
                 for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
-                    DrawLine(arrayVector[scene.models[v].edges[t][u]].x, arrayVector[scene.models[v].edges[t][u]].y, arrayVector[scene.models[v].edges[t][u+1]].x, arrayVector[scene.models[v].edges[t][u+1]].y);
+                    DrawLine(plot_verticies[scene.models[v].edges[t][u]].x,
+                             plot_verticies[scene.models[v].edges[t][u]].y,
+                             plot_verticies[scene.models[v].edges[t][u+1]].x,
+                             plot_verticies[scene.models[v].edges[t][u+1]].y);
                 }
             }
         }
     }
+
     // Parallel seen
     else if (scene.view.type === "parallel"){
         console.log("in parallel");
@@ -97,7 +116,7 @@ function DrawScene() {
                        [0,1,0,0],
                        [0,0,0,0],
                        [0,0,0,1]];
-        //console.log("projection_matrix: " +  JSON.stringify(projection_matrix));
+        // console.log("projection_matrix: " +  JSON.stringify(projection_matrix));
         for (let k = 0; k < scene.models[0].vertices.length; k++) {
             arrayOfMatrixVertex[k] = transAndScale.mult(Mpar.mult(Npar.mult(scene.models[0].vertices[k])));
         }
