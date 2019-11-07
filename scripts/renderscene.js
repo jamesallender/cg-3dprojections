@@ -292,15 +292,145 @@ function LoadNewScene() {
                 scene.models[i].vertices = [];
                 scene.models[i].edges = [];
                 
-                
-                
             }
         }
 
         DrawScene();
     };
     reader.readAsText(scene_file.files[0], "UTF-8");
+
+
+function calculateClipLine() {
+    var left = 32;
+    var right = 16;
+    var bottom = 8;
+    var top = 4;
+    var front = 2;
+    var back = 1;
+
+    for (let i = 0; i < scene.models.length; i++) {
+        for (let j = 0; j < scene.models[i].edges.length; j++) {
+            for (let k = 0; k < scene.models[i].edges[j].length - 1; k++) {
+
+
+                var outcode1 = getOutCode(scene.models[i].edges[j][k], scene.models[i].vertices);
+                console.log("outcode1: " + outcode1);
+
+                var outcode2 = getOutCode(scene.models[i].edges[j][k + 1], scene.models[i].vertices);
+                console.log("outcode2: " + outcode2);
+
+
+                //  For slope
+                var delta_x = p2.x - p1.x;
+                var delta_y = p2.y - p1.y;
+                var b = p1.y - ((delta_y / delta_x) * p1.x);
+
+                var result = {p1: {}, p2: {}}
+                var done = false;
+                while (!done) {
+
+                    // Trival Accept both inside of view
+                    if ((outcode1 | outcode2) == 0) {
+                        console.log("Trivial Accept");
+                        done = true;
+                        result.p1.x = p1.x;
+                        result.p1.y = p1.y;
+                        result.p2.x = p2.x;
+                        result.p2.y = p2.y;
+                    }
+                    // Trival Reject cannot cros through view
+                    else if ((outcode1 & outcode2) != 0) {
+                        console.log("Trivial Reject");
+                        done = true;
+                        result = null;
+
+                    }
+                    // clip line
+                    else {
+
+                        // p1 outside of view
+                        if (outcode1 != 0) {
+                            var modify_point = p1;
+                            var modify_outcode = outcode1;
+                        }
+                        // p2 outside of view
+                        else if (outcode2 != 0) {
+                            var modify_point = p2;
+                            var modify_outcode = outcode2;
+                        }
+
+                        // left
+                        if ((modify_outcode & left) === left) {
+                            modify_point.x = view.xmin;
+                            modify_point.y = (delta_y / delta_x) * modify_point.x + b;
+                        }
+                        // right
+                        else if ((modify_outcode & right) === right) {
+                            modify_point.x = view.xmax;
+                            modify_point.y = (delta_y / delta_x) * modify_point.x + b;
+                        }
+                        // top
+                        else if ((modify_outcode & top) === top) {
+                            modify_point.y = view.ymax;
+                            modify_point.x = (modify_point.y - b) * (delta_x / delta_y);
+                        }
+                        // bottom
+                        else if ((modify_outcode & bottom) === bottom) {
+                            modify_point.y = view.ymin;
+                            modify_point.x = (modify_point.y - b) * (delta_x / delta_y);
+                        } else {
+                            console.log("unknown decision tree");
+                        }
+
+
+                        if (outcode1 === modify_outcode) {
+                            outcode1 = getOutCode(modify_point, view);
+
+                        }
+                        // p2 outside of view
+                        else if (outcode2 === modify_outcode) {
+                            outcode2 = getOutCode(modify_point, view);
+                        }
+
+                    }
+                }
+
+            }
+            return result;
+
+        }
+    }
+
+
+
+function getOutCode(p) {
+    var left = 32;
+    var right = 16;
+    var bottom = 8;
+    var top = 4;
+    var front = 2;
+    var back = 1;
+
+    var out_code = 0;
+    console.log("p.x " + p.x);
+    console.log("p.y " + p.y);
+
+
+    if (p.x < view.xmin) {
+        out_code += left;
+    } else if (p.x > view.xmax) {
+        out_code += right;
+    }
+
+    if (p.y < view.ymin) {
+        out_code += bottom;
+    } else if (p.y > view.ymax) {
+        out_code += top;
+    }
+
+    return out_code;
 }
+
 
 // Draw black 2D line with red endpoints 
 function DrawLine(x1, y1, x2, y2) {
