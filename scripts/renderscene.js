@@ -14,7 +14,7 @@ function Init() {
 
     // initial scene... feel free to change this
     scene = {
-        
+
         view: {
             type: 'perspective',
             vrp: Vector3(20, 0, -30),
@@ -22,13 +22,6 @@ function Init() {
             vup: Vector3(0, 1, 0),
             prp: Vector3(14, 20, 26),
             clip: [-20, 20, -4, 36, 1, -50]
-            /*
-            vrp: Vector3(10,9, -30),
-            vpn: Vector3(0,0,1),
-            vup: Vector3(0, 1, 0),
-            prp: Vector3(0,0,18),
-            clip: [-11, 11, -11, 11, 1, -50]
-            */
         },
         models: [
             {
@@ -65,89 +58,65 @@ function Init() {
 function DrawScene() {
     // clean view
     ctx.clearRect(0, 0, view.width, view.height);
-    
-    let plot_verticies = [];
-    let Nper;
-    let Mper;
+
+    let arrayModelsVector = [];
+    let transformation_matrix;
+    let projection_matrix;
     let transAndScale = new Matrix(4,4);
     transAndScale.values = [[view.width/2,0,0,view.width/2],
-                            [0,view.height/2,0,view.height/2],
-                            [0,0,1,0],
-                            [0,0,0,1]];
-        
+        [0,view.height/2,0,view.height/2],
+        [0,0,1,0],
+        [0,0,0,1]];
     // perspective seen
-    if (scene.view.type === "perspective"){
-        // console.log("in perspective");
-        Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
-        // console.log("Nper: "  + JSON.stringify(Nper));
-
-        Mper = mat4x4mper(-1);
-        // console.log("Mper: "  + JSON.stringify(Mper));
-
-        // console.log("transAndScale: "  + JSON.stringify(transAndScale));
-
-        for (let k = 0; k < scene.models[0].vertices.length; k++) {
-            // console.log("Vertex befor: "  + JSON.stringify(scene.models[0].vertices[k]));
-            let temp_Nper = Nper.mult(scene.models[0].vertices[k]);
-            // console.log("temp_Nper: "  + JSON.stringify(temp_Nper));
-            let temp_Mper = Mper.mult(temp_Nper);
-            // console.log("temp_Mper: "  + JSON.stringify(temp_Mper));
-            let temp_transAndScale = transAndScale.mult(temp_Mper);
-            console.log("temp_transAndScale: "  + JSON.stringify(temp_transAndScale));
-
-            // plot_verticies.push(new Vector4(temp_transAndScale.values[0][0]/temp_transAndScale.values[3][0],
-            //                                 temp_transAndScale.values[1][0]/temp_transAndScale.values[3][0],
-            //                                 temp_transAndScale.values[2][0]/temp_transAndScale.values[3][0],
-            //                                 temp_transAndScale.values[3][0]/temp_transAndScale.values[3][0]));
-
-            plot_verticies.push(new Vector4(temp_transAndScale.values[0][0],
-                temp_transAndScale.values[1][0],
-                temp_transAndScale.values[2][0],
-                temp_transAndScale.values[3][0]));
-        }
-
-        console.log("plot_verticies: "  + JSON.stringify(plot_verticies));
-
-        for (let v = 0; v < scene.models.length; v++) {
-            for (let t = 0; t < scene.models[v].edges.length; t++) {
-                for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
-                    DrawLine(plot_verticies[scene.models[v].edges[t][u]].x,
-                             plot_verticies[scene.models[v].edges[t][u]].y,
-                             plot_verticies[scene.models[v].edges[t][u+1]].x,
-                             plot_verticies[scene.models[v].edges[t][u+1]].y);
-                }
-            }
-        }
-    }
-
+    var Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+    var Mper = new Matrix(4, 4);
+    Mper.values = [[1,0,0,0],
+        [0,1,0,0],
+        [0,0,1,0],
+        [0,0,-1,0]];
     // Parallel seen
-    else if (scene.view.type === "parallel"){
-        ctx.clearRect(0, 0, view.width, view.height);
-        console.log("in parallel");
-        var Npar = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
-        var Mpar = new Matrix(4, 4);
-        Mpar.values = [[1,0,0,0],
-                       [0,1,0,0],
-                       [0,0,0,0],
-                       [0,0,0,1]];
-        // console.log("projection_matrix: " +  JSON.stringify(projection_matrix));
-        for (let k = 0; k < scene.models[0].vertices.length; k++) {
-            arrayOfMatrixVertex[k] = transAndScale.mult(Mpar.mult(Npar.mult(scene.models[0].vertices[k])));
+    var Npar = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+    var Mpar = new Matrix(4, 4);
+    Mpar.values = [[1,0,0,0],
+        [0,1,0,0],
+        [0,0,0,0],
+        [0,0,0,1]];
+
+    for (let j = 0; j < scene.models.length; j++) {
+        let arrayOfVectorVertex = [];
+        for (let k = 0; k < scene.models[j].vertices.length; k++) {
+            if (scene.view.type === "perspective") {
+                arrayOfVectorVertex[k] = Matrix.multiply(transAndScale, Mper, Nper, scene.models[j].vertices[k]);
+            }
+            else if (scene.view.type === "parallel") {
+                arrayOfVectorVertex.push(Matrix.multiply(transAndScale, Mpar, Npar, scene.models[j].vertices[k]));
+            }
         }
-        for (let i = 0; i < arrayOfMatrixVertex.length; i++) {
-            arrayVector[i] = new Vector4(arrayOfMatrixVertex[i].values[0][0], arrayOfMatrixVertex[i].values[1][0], arrayOfMatrixVertex[i].values[2][0], arrayOfMatrixVertex[i].values[3][0]);
+        arrayModelsVector.push(arrayOfVectorVertex);
+    }
+
+    // make the w become 1
+    for (let m = 0; m < arrayModelsVector.length; m++) {
+        for (let i = 0; i < arrayModelsVector[m].length; i++) {
+            arrayModelsVector[m][i].x = arrayModelsVector[m][i].x/arrayModelsVector[m][i].w;
+            arrayModelsVector[m][i].y = arrayModelsVector[m][i].y/arrayModelsVector[m][i].w;
+            arrayModelsVector[m][i].z = arrayModelsVector[m][i].z/arrayModelsVector[m][i].w;
+            arrayModelsVector[m][i].w = arrayModelsVector[m][i].w/arrayModelsVector[m][i].w;
         }
-        for (let v = 0; v < scene.models.length; v++) {
-            for (let t = 0; t < scene.models[v].edges.length; t++) {
-                for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
-                    DrawLine(arrayVector[scene.models[v].edges[t][u]].x, arrayVector[scene.models[v].edges[t][u]].y, arrayVector[scene.models[v].edges[t][u+1]].x, arrayVector[scene.models[v].edges[t][u+1]].y);
-                }
+    }
+
+    // draw the lines
+    for (let v = 0; v < scene.models.length; v++) {
+        for (let t = 0; t < scene.models[v].edges.length; t++) {
+            for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
+                DrawLine(arrayModelsVector[v][scene.models[v].edges[t][u]].x,
+                    arrayModelsVector[v][scene.models[v].edges[t][u]].y,
+                    arrayModelsVector[v][scene.models[v].edges[t][u+1]].x,
+                    arrayModelsVector[v][scene.models[v].edges[t][u+1]].y);
             }
         }
     }
-    else{
-        console.log("unable to interprit: " + scene.view.type);
-        }
+
 }
 
 // Called when user selects a new scene JSON file
@@ -179,6 +148,7 @@ function LoadNewScene() {
 
             //Cube (but actually box like rectangle thing)
             else if(scene.models[i].type === 'cube') {
+
                 let center = scene.models[i].center;
                 //console.log("center: " + JSON.stringify(center));
                 let width = scene.models[i].width;
@@ -201,24 +171,17 @@ function LoadNewScene() {
                 scene.models[i].vertices.push(Vector4(center[0]-width/2, center[1]-height/2, center[2]-depth/2, 1));
                 scene.models[i].vertices.push(Vector4(center[0]-width/2, center[1]-height/2, center[2]+depth/2, 1));
 
-                //console.log("scene.models[i].vertices:");
-                //console.log(scene.models[i].vertices);
-                //console.log("scene.models[i].vertices: " +  JSON.stringify(scene.models[i].vertices));
-
-
+                // edges
                 scene.models[i].edges .push([0, 1, 2, 3, 0]);
                 scene.models[i].edges .push([4, 5, 6, 7, 4]);
                 scene.models[i].edges .push([0, 4]);
                 scene.models[i].edges .push([1, 5]);
                 scene.models[i].edges .push([2, 6]);
                 scene.models[i].edges .push([3, 7]);
-                //console.log("scene.models[i].edges :");
-                //console.log(scene.models[i].edges );
-                //console.log("scene.models[i].edges: " +  JSON.stringify(scene.models[i].edges));
-
             }
 
             else if(scene.models[i].type === 'cylinder') {
+
                 let center = scene.models[i].center;
                 //console.log("center: " + JSON.stringify(center));
                 let radius = scene.models[i].radius;
@@ -231,21 +194,23 @@ function LoadNewScene() {
                 scene.models[i].edges = [];
 
                 let increment_radians = (2*Math.PI)/sides;
-                
+
                 var upperEdgesArray = [];
                 var lowerEdgesArray = [];
                 for (let k = 0; k < sides; k++) {
                     scene.models[i].vertices.push(Vector4(center[0]+(radius*Math.cos(k*increment_radians)),
-                                                          center[1]+(height/2),
-                                                          center[2]-(radius*Math.sin(k*increment_radians)),
-                                                          1));
+                        center[1]+(height/2),
+                        center[2]-(radius*Math.sin(k*increment_radians)),
+                        1));
                 }
                 for (let j = 0; j < sides; j++) {
                     scene.models[i].vertices.push(Vector4(center[0]+(radius*Math.cos(j*increment_radians)),
-                                                          center[1]-(height/2),
-                                                          center[2]-(radius*Math.sin(j*increment_radians)),
-                                                          1));
+                        center[1]-(height/2),
+                        center[2]-(radius*Math.sin(j*increment_radians)),
+                        1));
                 }
+
+                // edges
                 for (let v = 0; v < scene.models[i].vertices.length/2; v++) {
                     upperEdgesArray.push(v);
                     lowerEdgesArray.push(v+sides);
@@ -256,8 +221,9 @@ function LoadNewScene() {
                 scene.models[i].edges.push(upperEdgesArray);
                 scene.models[i].edges.push(lowerEdgesArray);
             }
-            
+
             else if(scene.models[i].type === 'cone') {
+
                 let center = scene.models[i].centerOfBase;
                 let radius = scene.models[i].radius;
                 let height = scene.models[i].height;
@@ -269,11 +235,13 @@ function LoadNewScene() {
 
                 for (let k = 0; k < sides; k++) {
                     scene.models[i].vertices.push(Vector4(center[0]+(radius*Math.cos(k*increment_radians)),
-                                                          center[1],
-                                                          center[2]-(radius*Math.sin(k*increment_radians)),
-                                                          1));
+                        center[1],
+                        center[2]-(radius*Math.sin(k*increment_radians)),
+                        1));
                 }
                 scene.models[i].vertices.push(Vector4(center[0], center[1]+height, center[2], 1)); // cone apex
+
+                // edges
                 for (let v = 0; v < scene.models[i].vertices.length-1; v++) {
                     baseEdgesArray.push(v);
                 }
@@ -283,22 +251,57 @@ function LoadNewScene() {
                 }
                 scene.models[i].edges.push(baseEdgesArray);
             }
-            
+
             else if(scene.models[i].type === 'sphere') {
+
                 let center = scene.models[i].center;
                 let radius = scene.models[i].radius;
                 let slices = scene.models[i].slices;
                 let stack = scene.models[i].stack;
                 scene.models[i].vertices = [];
                 scene.models[i].edges = [];
-                
+
+                let increment_radians = (2*Math.PI)/slices;
+                var upperApex = [center[0], center[1]+radius, center[2]];
+                var lowerApex = [center[0], center[1]-radius, center[2]];
+
+                for (let u = 0; u < stack+2; u++) {
+                    for (let k = 0; k < slices; k++) {
+                        var y_axisIncrement = radius*Math.cos(u*Math.PI/(stack+1)); // y value between every stack
+                        var radiusOfStack = Math.sqrt(radius * radius - y_axisIncrement * y_axisIncrement); // radius of every stack
+                        scene.models[i].vertices.push(Vector4(center[0] + (radiusOfStack*Math.cos(k*increment_radians)),
+                            center[1] + y_axisIncrement,
+                            center[2] - (radiusOfStack*Math.sin(k*increment_radians)),
+                            1));
+                    }
+                }
+
+                // edges
+                for (let j = 0; j < stack+2; j++) {
+                    let edgesOfOneStack = [];
+                    for (let v = 0; v < slices; v++) {
+                        edgesOfOneStack.push(v+j*slices);
+                    }
+                    edgesOfOneStack.push(edgesOfOneStack[0]);
+                    scene.models[i].edges.push(edgesOfOneStack);
+                }
+
+                var lengthBefore = scene.models[i].edges.length;
+
+                for (let q = 0; q < scene.models[i].edges[0].length-1; q++) {
+                    let edgesOfOneSlices = [];
+                    for (let z = 0; z < lengthBefore; z++) {
+                        edgesOfOneSlices.push(scene.models[i].edges[z][q]);
+                    }
+                    scene.models[i].edges.push(edgesOfOneSlices);
+                }
             }
         }
 
         DrawScene();
     };
     reader.readAsText(scene_file.files[0], "UTF-8");
-
+}
 
 function calculateClipLine() {
     var left = 32;
