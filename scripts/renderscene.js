@@ -315,37 +315,27 @@ function calculateClipLine() {
         for (let j = 0; j < scene.models[i].edges.length; j++) {
             for (let k = 0; k < scene.models[i].edges[j].length - 1; k++) {
 
+                let v0 = scene.models[i].vertices[scene.models[i].edges[j][k]];
+                let v1 = scene.models[i].vertices[scene.models[i].edges[j][k+1]];
 
-                var outcode1 = getOutCode(scene.models[i].edges[j][k], scene.models[i].vertices);
+                let outcode1 = getOutCode(v0);
                 console.log("outcode1: " + outcode1);
 
-                var outcode2 = getOutCode(scene.models[i].edges[j][k + 1], scene.models[i].vertices);
+                let outcode2 = getOutCode(v1);
                 console.log("outcode2: " + outcode2);
 
-
-                //  For slope
-                var delta_x = p2.x - p1.x;
-                var delta_y = p2.y - p1.y;
-                var b = p1.y - ((delta_y / delta_x) * p1.x);
-
-                var result = {p1: {}, p2: {}}
-                var done = false;
+                let done = false;
                 while (!done) {
 
                     // Trival Accept both inside of view
                     if ((outcode1 | outcode2) == 0) {
                         console.log("Trivial Accept");
                         done = true;
-                        result.p1.x = p1.x;
-                        result.p1.y = p1.y;
-                        result.p2.x = p2.x;
-                        result.p2.y = p2.y;
                     }
                     // Trival Reject cannot cros through view
                     else if ((outcode1 & outcode2) != 0) {
                         console.log("Trivial Reject");
                         done = true;
-                        result = null;
 
                     }
                     // clip line
@@ -353,87 +343,114 @@ function calculateClipLine() {
 
                         // p1 outside of view
                         if (outcode1 != 0) {
-                            var modify_point = p1;
+                            var modify_vertice = v0;
                             var modify_outcode = outcode1;
                         }
                         // p2 outside of view
                         else if (outcode2 != 0) {
-                            var modify_point = p2;
+                            var modify_vertice = v1;
                             var modify_outcode = outcode2;
                         }
 
+
+                        let delta_x = v1.x - v0.x;
+                        let delta_y = v1.y - v0.y;
+                        let delta_z = v1.z - v0.z;
+
+                        let t = 0;
+                        // front
+                        if ((modify_outcode & front) === front) {
+                            t = ((-1-v0.z)/delta_z);
+                        }
+                        // back
+                        else if ((modify_outcode & back) === back) {
+                            t = ((-v0.z) / delta_z);
+                        }
                         // left
-                        if ((modify_outcode & left) === left) {
-                            modify_point.x = view.xmin;
-                            modify_point.y = (delta_y / delta_x) * modify_point.x + b;
+                        else if ((modify_outcode & left) === left) {
+                            t = ((-1 - v0.x) / delta_x);
                         }
                         // right
                         else if ((modify_outcode & right) === right) {
-                            modify_point.x = view.xmax;
-                            modify_point.y = (delta_y / delta_x) * modify_point.x + b;
+                            t = ((1 - v0.x) / delta_x);
                         }
                         // top
                         else if ((modify_outcode & top) === top) {
-                            modify_point.y = view.ymax;
-                            modify_point.x = (modify_point.y - b) * (delta_x / delta_y);
+                            t = ((1 - v0.y) / delta_y);
                         }
                         // bottom
                         else if ((modify_outcode & bottom) === bottom) {
-                            modify_point.y = view.ymin;
-                            modify_point.x = (modify_point.y - b) * (delta_x / delta_y);
+                            t = ((-1 - v0.y) / delta_y);
+
                         } else {
                             console.log("unknown decision tree");
                         }
 
+                        modify_vertice.y = v0.x + t * delta_x;
+                        modify_vertice.x = v0.y + t * delta_y;
+                        modify_vertice.z = v0.z + t * delta_z;
+
+
 
                         if (outcode1 === modify_outcode) {
-                            outcode1 = getOutCode(modify_point, view);
+                            outcode1 = getOutCode(modify_vertice, view);
 
                         }
                         // p2 outside of view
                         else if (outcode2 === modify_outcode) {
-                            outcode2 = getOutCode(modify_point, view);
+                            outcode2 = getOutCode(modify_vertice, view);
                         }
-
                     }
                 }
-
             }
-            return result;
-
         }
     }
+}
 
 
+function getOutCode(verticeVector) {
+    let left = 32;
+    let right = 16;
+    let bottom = 8;
+    let top = 4;
+    let front = 2;
+    let back = 1;
 
-function getOutCode(p) {
-    var left = 32;
-    var right = 16;
-    var bottom = 8;
-    var top = 4;
-    var front = 2;
-    var back = 1;
+    let out_code = 0;
+    console.log("verticeVector: " + JSON.stringify(verticeVector));
 
-    var out_code = 0;
-    console.log("p.x " + p.x);
-    console.log("p.y " + p.y);
+    console.log("verticeVector x: " + verticeVector.x);
+    console.log("verticeVector y: " + verticeVector.y);
+    console.log("verticeVector z: " + verticeVector.z);
+
+    let xmin = -1;
+    let xmax = 1;
+    let ymin = -1;
+    let ymax = 1;
+    let zmin = 0;
+    let zmax = -1;
 
 
-    if (p.x < view.xmin) {
+    if (verticeVector.x < xmin) {
         out_code += left;
-    } else if (p.x > view.xmax) {
+    } else if (verticeVector.x > xmax) {
         out_code += right;
     }
 
-    if (p.y < view.ymin) {
+    if (verticeVector.y < ymin) {
         out_code += bottom;
-    } else if (p.y > view.ymax) {
+    } else if (verticeVector.y > ymax) {
         out_code += top;
+    }
+
+    if (verticeVector.z < zmin) {
+        out_code += front;
+    } else if (verticeVector.z > zmax) {
+        out_code += back;
     }
 
     return out_code;
 }
-
 
 // Draw black 2D line with red endpoints 
 function DrawLine(x1, y1, x2, y2) {
