@@ -59,49 +59,75 @@ function DrawScene() {
     // clean view
     ctx.clearRect(0, 0, view.width, view.height);
 
-    let arrayModelsVector = [];
-    let transformation_matrix;
-    let projection_matrix;
+    let workingModels = {};
     let transAndScale = new Matrix(4,4);
+    let Mper = new Matrix(4, 4);
+    let Nper = new Matrix(4, 4);
+
+
     transAndScale.values = [[view.width/2,0,0,view.width/2],
         [0,view.height/2,0,view.height/2],
         [0,0,1,0],
         [0,0,0,1]];
     // perspective seen
-    var Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
-    var Mper = new Matrix(4, 4);
-    Mper.values = [[1,0,0,0],
-        [0,1,0,0],
-        [0,0,1,0],
-        [0,0,-1,0]];
-    // Parallel seen
-    var Npar = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
-    var Mpar = new Matrix(4, 4);
-    Mpar.values = [[1,0,0,0],
-        [0,1,0,0],
-        [0,0,0,0],
-        [0,0,0,1]];
-
-    for (let j = 0; j < scene.models.length; j++) {
-        let arrayOfVectorVertex = [];
-        for (let k = 0; k < scene.models[j].vertices.length; k++) {
-            if (scene.view.type === "perspective") {
-                arrayOfVectorVertex[k] = Matrix.multiply(transAndScale, Mper, Nper, scene.models[j].vertices[k]);
-            }
-            else if (scene.view.type === "parallel") {
-                arrayOfVectorVertex.push(Matrix.multiply(transAndScale, Mpar, Npar, scene.models[j].vertices[k]));
+    if (scene.view.type === "perspective") {
+        workingModels.models=[];
+        Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+        for (let j = 0; j < scene.models.length; j++) {
+            workingModels.models.push([]);
+            workingModels.models[j].vertices=[];
+            for (let k = 0; k < scene.models[j].vertices.length; k++) {
+                workingModels.models[j].vertices.push(Matrix.multiply(Nper, scene.models[j].vertices[k]));
             }
         }
-        arrayModelsVector.push(arrayOfVectorVertex);
+
+        clipModels(workingModels);
+
+        Mper = new Matrix(4, 4);
+        Mper.values = [[1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, -1, 0]];
+        for (let j = 0; j < scene.models.length; j++) {
+            for (let k = 0; k < scene.models[j].vertices.length; k++) {
+                workingModels.models[j].vertices[k] = Matrix.multiply(transAndScale, Mper, workingModels.models[j].vertices[k]);
+            }
+        }
+    }
+
+    else if (scene.view.type === "parallel") {
+        // Parallel seen
+        Nper = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
+        workingModels.models=[];
+        for (let j = 0; j < scene.models.length; j++) {
+            workingModels.models.push([]);
+            workingModels.models[j].vertices=[];
+            for (let k = 0; k < scene.models[j].vertices.length; k++) {
+                workingModels.models[j].vertices[k] = (Matrix.multiply(Nper, scene.models[j].vertices[k]));
+            }
+        }
+
+        clipModels(workingModels);
+
+        Mper = new Matrix(4, 4);
+        Mper.values = [[1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 1]];
+        for (let j = 0; j < scene.models.length; j++) {
+            for (let k = 0; k < scene.models[j].vertices.length; k++) {
+                workingModels.models[j].vertices[k] = (Matrix.multiply(transAndScale, Mper, workingModels.models[j].vertices[k]));
+            }
+        }
     }
 
     // make the w become 1
-    for (let m = 0; m < arrayModelsVector.length; m++) {
-        for (let i = 0; i < arrayModelsVector[m].length; i++) {
-            arrayModelsVector[m][i].x = arrayModelsVector[m][i].x/arrayModelsVector[m][i].w;
-            arrayModelsVector[m][i].y = arrayModelsVector[m][i].y/arrayModelsVector[m][i].w;
-            arrayModelsVector[m][i].z = arrayModelsVector[m][i].z/arrayModelsVector[m][i].w;
-            arrayModelsVector[m][i].w = arrayModelsVector[m][i].w/arrayModelsVector[m][i].w;
+    for (let m = 0; m < scene.models.length; m++) {
+        for (let i = 0; i < scene.models[m].vertices.length; i++) {
+            workingModels.models[m].vertices[i].x = workingModels.models[m].vertices[i].x/workingModels.models[m].vertices[i].w;
+            workingModels.models[m].vertices[i].y = workingModels.models[m].vertices[i].y/workingModels.models[m].vertices[i].w;
+            workingModels.models[m].vertices[i].z = workingModels.models[m].vertices[i].z/workingModels.models[m].vertices[i].w;
+            workingModels.models[m].vertices[i].w = workingModels.models[m].vertices[i].w/workingModels.models[m].vertices[i].w;
         }
     }
 
@@ -109,13 +135,15 @@ function DrawScene() {
     for (let v = 0; v < scene.models.length; v++) {
         for (let t = 0; t < scene.models[v].edges.length; t++) {
             for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
-                DrawLine(arrayModelsVector[v][scene.models[v].edges[t][u]].x,
-                    arrayModelsVector[v][scene.models[v].edges[t][u]].y,
-                    arrayModelsVector[v][scene.models[v].edges[t][u+1]].x,
-                    arrayModelsVector[v][scene.models[v].edges[t][u+1]].y);
+                DrawLine(workingModels.models[v].vertices[scene.models[v].edges[t][u]].x,
+                    workingModels.models[v].vertices[scene.models[v].edges[t][u]].y,
+                    workingModels.models[v].vertices[scene.models[v].edges[t][u+1]].x,
+                    workingModels.models[v].vertices[scene.models[v].edges[t][u+1]].y);
             }
         }
     }
+
+    console.log(JSON.stringify(scene))
 
 }
 
@@ -303,7 +331,7 @@ function LoadNewScene() {
     reader.readAsText(scene_file.files[0], "UTF-8");
 }
 
-function calculateClipLine() {
+function clipModels(workingModels) {
     var left = 32;
     var right = 16;
     var bottom = 8;
@@ -315,25 +343,25 @@ function calculateClipLine() {
         for (let j = 0; j < scene.models[i].edges.length; j++) {
             for (let k = 0; k < scene.models[i].edges[j].length - 1; k++) {
 
-                let v0 = scene.models[i].vertices[scene.models[i].edges[j][k]];
-                let v1 = scene.models[i].vertices[scene.models[i].edges[j][k+1]];
+                let v0 = workingModels.models[i].vertices[scene.models[i].edges[j][k]];
+                let v1 = workingModels.models[i].vertices[scene.models[i].edges[j][k+1]];
 
-                let outcode1 = getOutCode(v0);
+                let outcode0 = getOutCode(v0);
+                console.log("outcode0: " + outcode0);
+
+                let outcode1 = getOutCode(v1);
                 console.log("outcode1: " + outcode1);
-
-                let outcode2 = getOutCode(v1);
-                console.log("outcode2: " + outcode2);
 
                 let done = false;
                 while (!done) {
 
                     // Trival Accept both inside of view
-                    if ((outcode1 | outcode2) == 0) {
+                    if ((outcode0 | outcode1) == 0) {
                         console.log("Trivial Accept");
                         done = true;
                     }
                     // Trival Reject cannot cros through view
-                    else if ((outcode1 & outcode2) != 0) {
+                    else if ((outcode0 & outcode1) != 0) {
                         console.log("Trivial Reject");
                         done = true;
 
@@ -341,15 +369,17 @@ function calculateClipLine() {
                     // clip line
                     else {
 
-                        // p1 outside of view
-                        if (outcode1 != 0) {
+                        // v0 outside of view
+                        if (outcode0 != 0) {
+                            console.log("v0 outside view");
                             var modify_vertice = v0;
-                            var modify_outcode = outcode1;
+                            var modify_outcode = outcode0;
                         }
-                        // p2 outside of view
-                        else if (outcode2 != 0) {
+                        // v1 outside of view
+                        else if (outcode1 != 0) {
+                            console.log("v0 outside view");
                             var modify_vertice = v1;
-                            var modify_outcode = outcode2;
+                            var modify_outcode = outcode1;
                         }
 
 
@@ -391,14 +421,16 @@ function calculateClipLine() {
                         modify_vertice.z = v0.z + t * delta_z;
 
 
-
-                        if (outcode1 === modify_outcode) {
-                            outcode1 = getOutCode(modify_vertice, view);
+                        // v0 outside of view
+                        if (outcode0 === modify_outcode) {
+                            outcode0 = getOutCode(modify_vertice, view);
+                            console.log("modified v0 to: " + outcode0);
 
                         }
-                        // p2 outside of view
-                        else if (outcode2 === modify_outcode) {
-                            outcode2 = getOutCode(modify_vertice, view);
+                        // v1 outside of view
+                        else if (outcode1 === modify_outcode) {
+                            outcode1 = getOutCode(modify_vertice, view);
+                            console.log("modified v1 to: " + outcode1);
                         }
                     }
                 }
@@ -443,9 +475,9 @@ function getOutCode(verticeVector) {
         out_code += top;
     }
 
-    if (verticeVector.z < zmin) {
+    if (verticeVector.z > zmin) {
         out_code += front;
-    } else if (verticeVector.z > zmax) {
+    } else if (verticeVector.z < zmax) {
         out_code += back;
     }
 
