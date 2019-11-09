@@ -11,7 +11,7 @@ function Init() {
     view.height = h;
 
     ctx = view.getContext('2d');
-
+    
     // initial scene... feel free to change this
     scene = {
         
@@ -26,6 +26,10 @@ function Init() {
         models: [
             {
                 type: 'generic',
+                animation: {
+                axis: "y",
+                rps: 1
+                },
                 vertices: [
                     Vector4( 0,  0, -30, 1),
                     Vector4(20,  0, -30, 1),
@@ -47,9 +51,13 @@ function Init() {
                     [3, 8],
                     [4, 9]
                 ]
+                
             }
         ]
     };
+
+    // event handler for pressing arrow keys
+    document.addEventListener('keydown', OnKeyDown, false);
     
     DrawScene();
 }
@@ -123,8 +131,6 @@ function DrawScene() {
 function LoadNewScene() {
     var scene_file = document.getElementById('scene_file');
 
-    //console.log(scene_file.files[0]);
-
     var reader = new FileReader();
     reader.onload = (event) => {
         scene = JSON.parse(event.target.result);
@@ -150,13 +156,9 @@ function LoadNewScene() {
             else if(scene.models[i].type === 'cube') {
                 
                 let center = scene.models[i].center;
-                //console.log("center: " + JSON.stringify(center));
                 let width = scene.models[i].width;
-                //console.log("width: " + JSON.stringify(width));
                 let height = scene.models[i].height;
-                //console.log("height: " + JSON.stringify(height));
                 let depth = scene.models[i].depth;
-                //console.log("depth: " + JSON.stringify(depth));
 
                 scene.models[i].vertices = [];
                 scene.models[i].edges = [];
@@ -183,13 +185,10 @@ function LoadNewScene() {
             else if(scene.models[i].type === 'cylinder') {
                 
                 let center = scene.models[i].center;
-                //console.log("center: " + JSON.stringify(center));
                 let radius = scene.models[i].radius;
-                //console.log("radius: " + JSON.stringify(radius));
                 let height = scene.models[i].height;
-                //console.log("height: " + JSON.stringify(height));
                 let sides = scene.models[i].sides;
-                //console.log("sides: " + JSON.stringify(sides));
+                
                 scene.models[i].vertices = [];
                 scene.models[i].edges = [];
 
@@ -315,3 +314,49 @@ function DrawLine(x1, y1, x2, y2) {
     ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
     ctx.fillRect(x2 - 2, y2 - 2, 4, 4);
 }
+
+// Called when user presses a key on the keyboard down 
+function OnKeyDown(event) {
+	
+	scene.view.vpn.normalize();
+	let u_axis = scene.view.vup.cross(scene.view.vpn);
+	u_axis.normalize();
+	
+    switch (event.keyCode) {
+        case 37: // LEFT Arrow
+            console.log("left");
+			scene.view.vrp = scene.view.vrp.subtract(u_axis);
+            DrawScene();
+			
+            break;
+        case 38: // UP Arrow
+            console.log("up");
+			scene.view.vrp = scene.view.vrp.subtract(scene.view.vpn);
+            DrawScene();
+			
+            break;
+        case 39: // RIGHT Arrow
+            console.log("right");
+			scene.view.vrp = scene.view.vrp.add(u_axis);
+            DrawScene();
+			
+            break;
+        case 40: // DOWN Arrow
+            console.log("down");
+			scene.view.vrp = scene.view.vrp.add(scene.view.vpn);
+            DrawScene();
+            break;
+    }
+}
+
+// line clipping for parallel
+
+
+
+
+
+
+
+
+
+

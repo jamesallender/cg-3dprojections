@@ -306,7 +306,7 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
     // 2. rotate VRC such that n-axis (VPN) becomes the z-axis,
     //    u-axis becomes the x-axis, and v-axis becomes the y-axis
     vpn.normalize();
-    let n_axis = vpn; //(normialize vpn to length 1)
+    let n_axis = vpn; //(normalize vpn to length 1)
     let u_axis = vup.cross(n_axis); //normalized vup cross n axis
     u_axis.normalize();
     let v_axis = n_axis.cross(u_axis);
@@ -334,7 +334,6 @@ function mat4x4parallel(vrp, vpn, vup, prp, clip) {
     var ScaleMatrix = mat4x4scale(Sparx, Spary, Sparz);
 
     var Npar = ScaleMatrix.mult(CW_TranslateMatrix.mult(shparMatrix.mult(rotateMatrix.mult(translateMatrix))));
-
     return Npar;
 }
 
