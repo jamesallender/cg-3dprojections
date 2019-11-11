@@ -28,7 +28,11 @@ function Init() {
                 type: 'generic',
                 animation: {
                 axis: "y",
-                rps: 1
+                rps: 1,
+                animation: {
+                    axis: "y",
+                    rps: 1
+                    }
                 },
                 vertices: [
                     Vector4( 0,  0, -30, 1),
@@ -51,7 +55,6 @@ function Init() {
                     [3, 8],
                     [4, 9]
                 ]
-                
             }
         ]
     };
@@ -90,19 +93,78 @@ function DrawScene() {
                    [0,0,0,0],
                    [0,0,0,1]];                        
     
+    var beforeClip = [];
+    for (let j = 0; j < scene.models.length; j++) {
+        beforeClip[j] = [];
+        for (let k = 0; k < scene.models[j].vertices.length; k++) {
+            if (scene.view.type === "perspective") {
+                beforeClip[j][k] = Matrix.multiply(Nper, scene.models[j].vertices[k]);
+            } 
+            else if (scene.view.type === "parallel") {
+                beforeClip[j][k] = Matrix.multiply(Npar, scene.models[j].vertices[k]);
+            }
+        }
+    } // good
+    
+    var afterClip = [];
+    for (let a = 0; a < scene.models.length; a++) {
+        afterClip[a] = [];
+        for (let b = 0; b < scene.models[a].edges.length; b++) {
+            for (let c = 0; c < scene.models[a].edges[b].length-1; c++) {
+                var clipResult = ClipLine(beforeClip[a][scene.models[a].edges[b][c]], beforeClip[a][scene.models[a].edges[b][c+1]], scene.view)
+                if (clipResult !== null) {
+                    afterClip[a].push(clipResult[0]);
+                    afterClip[a].push(clipResult[1]);
+                }
+            }
+        }
+    }
+    
+    for (let d = 0; d < afterClip.length; d++) {
+        for (let e = 0; e < afterClip[d].length; e++) {
+            if (scene.view.type === "perspective") {
+                afterClip[d][e] = Matrix.multiply(transAndScale, Mper, afterClip[d][e]);
+            }
+            else if (scene.view.type === "parallel") {
+                afterClip[d][e] = Matrix.multiply(transAndScale, Mpar, afterClip[d][e]);
+            }
+            afterClip[d][e].x = afterClip[d][e].x / afterClip[d][e].w;
+            afterClip[d][e].y = afterClip[d][e].y / afterClip[d][e].w;
+            afterClip[d][e].z = afterClip[d][e].z / afterClip[d][e].w;
+            afterClip[d][e].w = afterClip[d][e].w / afterClip[d][e].w;
+        }
+    }
+    
+    for (let f = 0; f < afterClip.length; f++) {
+        for (let g = 0; g < afterClip[f].length-1; g+=2) {
+            DrawLine(afterClip[f][g].x,
+                     afterClip[f][g].y,
+                     afterClip[f][g+1].x,
+                     afterClip[f][g+1].y);
+        }
+    }
+    
+    
+    
+    /*
     for (let j = 0; j < scene.models.length; j++) {
         let arrayOfVectorVertex = [];
         for (let k = 0; k < scene.models[j].vertices.length; k++) {
             if (scene.view.type === "perspective") {
-                arrayOfVectorVertex[k] = Matrix.multiply(transAndScale, Mper, Nper, scene.models[j].vertices[k]);
+                //arrayOfVectorVertex[k] = Matrix.multiply(transAndScale, Mper, Nper, scene.models[j].vertices[k]);
+                arrayOfVectorVertex[k] = Matrix.multiply(Nper, scene.models[j].vertices[k]);
             } 
             else if (scene.view.type === "parallel") {
-                arrayOfVectorVertex.push(Matrix.multiply(transAndScale, Mpar, Npar, scene.models[j].vertices[k]));
+                //arrayOfVectorVertex.push(Matrix.multiply(transAndScale, Mpar, Npar, scene.models[j].vertices[k]));
+                arrayOfVectorVertex.push(Matrix.multiply(Npar, scene.models[j].vertices[k]));
             }
         }
         arrayModelsVector.push(arrayOfVectorVertex);
     }
+    console.log(arrayModelsVector);
     
+    
+    /*  no clipping version
     // make the w become 1
     for (let m = 0; m < arrayModelsVector.length; m++) {
         for (let i = 0; i < arrayModelsVector[m].length; i++) {
@@ -124,7 +186,7 @@ function DrawScene() {
             }
         }
     }
-    
+    */
 }
 
 // Called when user selects a new scene JSON file
@@ -174,12 +236,12 @@ function LoadNewScene() {
                 scene.models[i].vertices.push(Vector4(center[0]-width/2, center[1]-height/2, center[2]+depth/2, 1));
                 
                 // edges
-                scene.models[i].edges .push([0, 1, 2, 3, 0]);
-                scene.models[i].edges .push([4, 5, 6, 7, 4]);
-                scene.models[i].edges .push([0, 4]);
-                scene.models[i].edges .push([1, 5]);
-                scene.models[i].edges .push([2, 6]);
-                scene.models[i].edges .push([3, 7]);
+                scene.models[i].edges.push([0, 1, 2, 3, 0]);
+                scene.models[i].edges.push([4, 5, 6, 7, 4]);
+                scene.models[i].edges.push([0, 4]);
+                scene.models[i].edges.push([1, 5]);
+                scene.models[i].edges.push([2, 6]);
+                scene.models[i].edges.push([3, 7]);
             }
 
             else if(scene.models[i].type === 'cylinder') {
@@ -327,19 +389,16 @@ function OnKeyDown(event) {
             console.log("left");
 			scene.view.vrp = scene.view.vrp.subtract(u_axis);
             DrawScene();
-			
             break;
         case 38: // UP Arrow
             console.log("up");
 			scene.view.vrp = scene.view.vrp.subtract(scene.view.vpn);
             DrawScene();
-			
             break;
         case 39: // RIGHT Arrow
             console.log("right");
 			scene.view.vrp = scene.view.vrp.add(u_axis);
             DrawScene();
-			
             break;
         case 40: // DOWN Arrow
             console.log("down");
@@ -349,14 +408,174 @@ function OnKeyDown(event) {
     }
 }
 
-// line clipping for parallel
+// clipping
+var Left = 32;   // 100000
+var Right = 16;  // 010000
+var Bottom = 8;  // 001000
+var Top = 4;	 // 000100
+var Front = 2;   // 000010
+var Back = 1;    // 000001
 
+function GetOutCode(pt, view) {
+	var outCode = 0;
+    //var Z_min = -(-view.prp.z + view.clip[4]) / (-view.prp.z + view.clip[5]);
+    var Z_min = -(-pt.z + view.clip[4]) / (-pt.z + view.clip[5]);
+    if (view.type === "parallel") {
+        if (pt.x < -1) {
+            outCode += Left;
+        }
+        else if (pt.x > 1) {
+            outCode += Right;
+        }
+        if (pt.y < -1) {
+            outCode += Bottom;
+        }
+        else if (pt.y > 1) {
+            outCode += Top;
+        }
+        if (pt.z > 0) {
+            outCode += Front;
+        }
+        else if (pt.z < -1) {
+            outCode += Back;
+        }
+    }
+    else if (view.type === "perspective") {
+        if (pt.x < pt.z) {
+            outCode += Left;
+        }
+        else if (pt.x > -pt.z) {
+            outCode += Right;
+        }
+        if (pt.y < pt.z) {
+            outCode += Bottom;
+        }
+        else if (pt.y > -pt.z) {
+            outCode += Top;
+        }
+        if (pt.z > Z_min) {
+            outCode += Front;
+        }
+        else if (pt.z < -1) {
+            outCode += Back;
+        }
+    }
+      
+	return outCode;
+}
 
+function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
+    
+	result = {pt0: {}, pt1: {}}
+    var vectorResult = [];
+    
+    var Z_min = -(-view.prp.z + view.clip[4]) / (-view.prp.z + view.clip[5]);
+    
+    var tem0 = Vector4(pt0.x, pt0.y, pt0.z, 1);
+    var tem1 = Vector4(pt1.x, pt1.y, pt1.z, 1);
+    
+	var outcode0 = GetOutCode(tem0, view);
+	var outcode1 = GetOutCode(tem1, view);
+    
+	var delta_x = pt1.x - pt0.x;
+	var delta_y = pt1.y - pt0.y;
+	var delta_z = pt1.z - pt0.z;
+    
+    var left_t;
+	var right_t;
+	var top_t;
+	var bot_t;
+	var front_t;
+	var back_t;
+    
+    if (view.type === "parallel") {
+        left_t = (-1-tem0.x)/delta_x;
+        right_t = (1-tem0.x)/delta_x;
+        top_t = (1-tem0.y)/delta_y;
+        bot_t = (-1-tem0.y)/delta_y;
+        front_t = -tem0.z/delta_z;
+        back_t = (-1-tem0.z)/delta_z;
+	}
+    else if (view.type === "perspective") {
+        left_t = (-tem0.x+tem0.z)/(delta_x-delta_z);
+        right_t = (tem0.x+tem0.z)/(-delta_x-delta_z);
+        top_t = (tem0.y+tem0.z)/(-delta_y-delta_z);
+        bot_t = (-tem0.y+tem0.z)/(delta_y-delta_z);
+        front_t = (tem0.z-Z_min)/-delta_z;
+        back_t = (-tem0.z-1)/delta_z;
+	}
+    
+    var done = false;
+	var selectedPoint;
+    var selectedOutcode;
+    
+	while (!done) {
+		if ((outcode0 | outcode1) === 0) { // trivial accept
+			done  = true;
+			result.pt0.x = tem0.x;
+			result.pt0.y = tem0.y;
+			result.pt0.z = tem0.z;
+			result.pt1.x = tem1.x;
+			result.pt1.y = tem1.y;
+			result.pt1.z = tem1.z;
+		}
+		else if ((outcode0 & outcode1) !== 0) { // trivial reject
+			done = true;
+            return null;
+		}
+		else {
+            
+			if (outcode0 > 0) {
+				selectedPoint = tem0;
+				selectedOutcode = outcode0;
+			}
+			else {
+				selectedPoint = tem1;
+				selectedOutcode = outcode1;
+			}
+			if ((selectedOutcode & Left) === Left) {
+				selectedPoint.x = tem0.x + left_t * delta_x;
+				selectedPoint.y = tem0.y + left_t * delta_y;
+				selectedPoint.z = tem0.z + left_t * delta_z;
+			}
+			else if ((selectedOutcode & Right) === Right) {  
+				selectedPoint.x = tem0.x + right_t * delta_x;
+				selectedPoint.y = tem0.y + right_t * delta_y;
+				selectedPoint.z = tem0.z + right_t * delta_z;
+			}
+			else if ((selectedOutcode & Bottom) === Bottom) {
+                selectedPoint.x = tem0.x + bot_t * delta_x;
+				selectedPoint.y = tem0.y + bot_t * delta_y;
+				selectedPoint.z = tem0.z + bot_t * delta_z;
+			}
+			else if ((selectedOutcode & Top) === Top) {
+				selectedPoint.x = tem0.x + top_t * delta_x;
+                selectedPoint.y = tem0.y + top_t * delta_y;
+				selectedPoint.z = tem0.z + top_t * delta_z;
+			}
+			else if ((selectedOutcode & Front) === Front) {
+				selectedPoint.x = tem0.x + front_t * delta_x;
+				selectedPoint.y = tem0.y + front_t * delta_y;
+				selectedPoint.z = tem0.z + front_t * delta_z;
+			}
+			else if ((selectedOutcode & Back) === Back) {
+				selectedPoint.x = tem0.x + back_t * delta_x;
+				selectedPoint.y = tem0.y + back_t * delta_y;
+				selectedPoint.z = tem0.z + back_t * delta_z;
+			}
 
-
-
-
-
-
-
-
+			selectedOutcode = GetOutCode(selectedPoint, view);
+			if (outcode0 > 0) {
+				outcode0 = selectedOutcode;
+			}
+			else {
+				outcode1 = selectedOutcode;
+			}
+		}
+	}
+    
+    vectorResult.push(Vector4(result.pt0.x, result.pt0.y, result.pt0.z, 1));
+    vectorResult.push(Vector4(result.pt1.x, result.pt1.y, result.pt1.z, 1));
+    
+    return vectorResult;
+}
