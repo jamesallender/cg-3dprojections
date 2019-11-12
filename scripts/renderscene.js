@@ -64,54 +64,82 @@ function Init() {
     
     DrawScene();
 }
+var degree = 0;
 
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
     // clean view
     ctx.clearRect(0, 0, view.width, view.height);
-    
+
+
     let arrayModelsVector = [];
     let transformation_matrix;
     let projection_matrix;
-    let transAndScale = new Matrix(4,4);
-    transAndScale.values = [[view.width/2,0,0,view.width/2],
-                            [0,view.height/2,0,view.height/2],
-                            [0,0,1,0],
-                            [0,0,0,1]];
-    // perspective seen                        
+    let transAndScale = new Matrix(4, 4);
+    transAndScale.values = [[view.width / 2, 0, 0, view.width / 2],
+        [0, view.height / 2, 0, view.height / 2],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]];
+
+    // perspective seen
     var Nper = mat4x4perspective(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
     var Mper = new Matrix(4, 4);
-    Mper.values = [[1,0,0,0],
-                   [0,1,0,0],
-                   [0,0,1,0],
-                   [0,0,-1,0]];                        
-    // Parallel seen                        
+    Mper.values = [[1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, -1, 0]];
+
+    // Parallel seen
     var Npar = mat4x4parallel(scene.view.vrp, scene.view.vpn, scene.view.vup, scene.view.prp, scene.view.clip);
     var Mpar = new Matrix(4, 4);
-    Mpar.values = [[1,0,0,0],
-                   [0,1,0,0],
-                   [0,0,0,0],
-                   [0,0,0,1]];                        
-    
+    Mpar.values = [[1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 1]];
+
     var beforeClip = [];
     for (let j = 0; j < scene.models.length; j++) {
         beforeClip[j] = [];
+
+        let x_avg = 0;
+        let y_avg = 0;
+        let z_avg = 0;
         for (let k = 0; k < scene.models[j].vertices.length; k++) {
+            x_avg += scene.models[j].vertices[k].x;
+            y_avg += scene.models[j].vertices[k].y;
+            z_avg += scene.models[j].vertices[k].z;
+        }
+        x_avg = x_avg / scene.models[j].vertices.length;
+        y_avg = y_avg / scene.models[j].vertices.length;
+        z_avg = z_avg / scene.models[j].vertices.length;
+
+        for (let k = 0; k < scene.models[j].vertices.length; k++) {
+            // degree += 1;
+            // if (degree >= 360){
+            //     degree = 0;
+            // }
+            let px = scene.models[j].vertices[k].x;
+            let py = scene.models[j].vertices[k].y;
+            let pz = scene.models[j].vertices[k].z;
+
+            console.log("degree: " + JSON.stringify(degree));
+            let rotatemtx = Matrix.multiply(mat4x4translate(x_avg, y_avg, z_avg), mat4x4rotatez(degree * Math.PI / 180), mat4x4translate(-x_avg, -y_avg, -z_avg));
+            console.log("rotatemtx: " + JSON.stringify(rotatemtx));
+
             if (scene.view.type === "perspective") {
-                beforeClip[j][k] = Matrix.multiply(Nper, scene.models[j].vertices[k]);
-            } 
-            else if (scene.view.type === "parallel") {
-                beforeClip[j][k] = Matrix.multiply(Npar, scene.models[j].vertices[k]);
+                beforeClip[j][k] = Matrix.multiply(Nper, rotatemtx, scene.models[j].vertices[k]);
+            } else if (scene.view.type === "parallel") {
+                beforeClip[j][k] = Matrix.multiply(Npar, rotatemtx, scene.models[j].vertices[k]);
             }
         }
     } // good
-    
+
     var afterClip = [];
     for (let a = 0; a < scene.models.length; a++) {
         afterClip[a] = [];
         for (let b = 0; b < scene.models[a].edges.length; b++) {
-            for (let c = 0; c < scene.models[a].edges[b].length-1; c++) {
-                var clipResult = ClipLine(beforeClip[a][scene.models[a].edges[b][c]], beforeClip[a][scene.models[a].edges[b][c+1]], scene.view)
+            for (let c = 0; c < scene.models[a].edges[b].length - 1; c++) {
+                var clipResult = ClipLine(beforeClip[a][scene.models[a].edges[b][c]], beforeClip[a][scene.models[a].edges[b][c + 1]], scene.view);
                 if (clipResult !== null) {
                     afterClip[a].push(clipResult[0]);
                     afterClip[a].push(clipResult[1]);
@@ -119,13 +147,12 @@ function DrawScene() {
             }
         }
     }
-    
+
     for (let d = 0; d < afterClip.length; d++) {
         for (let e = 0; e < afterClip[d].length; e++) {
             if (scene.view.type === "perspective") {
                 afterClip[d][e] = Matrix.multiply(transAndScale, Mper, afterClip[d][e]);
-            }
-            else if (scene.view.type === "parallel") {
+            } else if (scene.view.type === "parallel") {
                 afterClip[d][e] = Matrix.multiply(transAndScale, Mpar, afterClip[d][e]);
             }
             afterClip[d][e].x = afterClip[d][e].x / afterClip[d][e].w;
@@ -134,59 +161,16 @@ function DrawScene() {
             afterClip[d][e].w = afterClip[d][e].w / afterClip[d][e].w;
         }
     }
-    
+
     for (let f = 0; f < afterClip.length; f++) {
-        for (let g = 0; g < afterClip[f].length-1; g+=2) {
+        for (let g = 0; g < afterClip[f].length - 1; g += 2) {
             DrawLine(afterClip[f][g].x,
-                     afterClip[f][g].y,
-                     afterClip[f][g+1].x,
-                     afterClip[f][g+1].y);
+                afterClip[f][g].y,
+                afterClip[f][g + 1].x,
+                afterClip[f][g + 1].y);
         }
     }
-    
-    
-    
-    /*
-    for (let j = 0; j < scene.models.length; j++) {
-        let arrayOfVectorVertex = [];
-        for (let k = 0; k < scene.models[j].vertices.length; k++) {
-            if (scene.view.type === "perspective") {
-                //arrayOfVectorVertex[k] = Matrix.multiply(transAndScale, Mper, Nper, scene.models[j].vertices[k]);
-                arrayOfVectorVertex[k] = Matrix.multiply(Nper, scene.models[j].vertices[k]);
-            } 
-            else if (scene.view.type === "parallel") {
-                //arrayOfVectorVertex.push(Matrix.multiply(transAndScale, Mpar, Npar, scene.models[j].vertices[k]));
-                arrayOfVectorVertex.push(Matrix.multiply(Npar, scene.models[j].vertices[k]));
-            }
-        }
-        arrayModelsVector.push(arrayOfVectorVertex);
-    }
-    console.log(arrayModelsVector);
-    
-    
-    /*  no clipping version
-    // make the w become 1
-    for (let m = 0; m < arrayModelsVector.length; m++) {
-        for (let i = 0; i < arrayModelsVector[m].length; i++) {
-            arrayModelsVector[m][i].x = arrayModelsVector[m][i].x/arrayModelsVector[m][i].w;
-            arrayModelsVector[m][i].y = arrayModelsVector[m][i].y/arrayModelsVector[m][i].w;
-            arrayModelsVector[m][i].z = arrayModelsVector[m][i].z/arrayModelsVector[m][i].w;
-            arrayModelsVector[m][i].w = arrayModelsVector[m][i].w/arrayModelsVector[m][i].w;
-        }
-    }
-        
-    // draw the lines
-    for (let v = 0; v < scene.models.length; v++) {
-        for (let t = 0; t < scene.models[v].edges.length; t++) {
-            for (let u = 0; u < scene.models[v].edges[t].length-1; u++) {
-                DrawLine(arrayModelsVector[v][scene.models[v].edges[t][u]].x, 
-                         arrayModelsVector[v][scene.models[v].edges[t][u]].y, 
-                         arrayModelsVector[v][scene.models[v].edges[t][u+1]].x, 
-                         arrayModelsVector[v][scene.models[v].edges[t][u+1]].y);
-            }
-        }
-    }
-    */
+    // setTimeout(DrawScene,50);
 }
 
 // Called when user selects a new scene JSON file
@@ -417,46 +401,50 @@ var Front = 2;   // 000010
 var Back = 1;    // 000001
 
 function GetOutCode(pt, view) {
+    console.log("GetOutCode");
 	var outCode = 0;
     //var Z_min = -(-view.prp.z + view.clip[4]) / (-view.prp.z + view.clip[5]);
     var Z_min = -(-pt.z + view.clip[4]) / (-pt.z + view.clip[5]);
+
+
+    let epsilon = 0.000000001;
     if (view.type === "parallel") {
-        if (pt.x < -1) {
+        if (pt.x < -1-epsilon) {
             outCode += Left;
         }
-        else if (pt.x > 1) {
+        else if (pt.x > 1+epsilon) {
             outCode += Right;
         }
-        if (pt.y < -1) {
+        if (pt.y < -1-epsilon) {
             outCode += Bottom;
         }
-        else if (pt.y > 1) {
+        else if (pt.y > 1+epsilon) {
             outCode += Top;
         }
-        if (pt.z > 0) {
+        if (pt.z > 0+epsilon) {
             outCode += Front;
         }
-        else if (pt.z < -1) {
+        else if (pt.z < -1-epsilon) {
             outCode += Back;
         }
     }
     else if (view.type === "perspective") {
-        if (pt.x < pt.z) {
+        if (pt.x < pt.z-epsilon) {
             outCode += Left;
         }
-        else if (pt.x > -pt.z) {
+        else if (pt.x > -pt.z + epsilon) {
             outCode += Right;
         }
-        if (pt.y < pt.z) {
+        if (pt.y < pt.z - epsilon) {
             outCode += Bottom;
         }
-        else if (pt.y > -pt.z) {
+        else if (pt.y > -pt.z + epsilon) {
             outCode += Top;
         }
-        if (pt.z > Z_min) {
+        if (pt.z > Z_min + epsilon) {
             outCode += Front;
         }
-        else if (pt.z < -1) {
+        else if (pt.z < -1 - epsilon) {
             outCode += Back;
         }
     }
@@ -465,15 +453,18 @@ function GetOutCode(pt, view) {
 }
 
 function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
-    
-	result = {pt0: {}, pt1: {}}
+    console.log("call clip line");
+    console.log("pt 0: " + JSON.stringify(pt0));
+    console.log("pt 1: " + JSON.stringify(pt1));
+
+	result = {pt0: {}, pt1: {}};
     var vectorResult = [];
     
     var Z_min = -(-view.prp.z + view.clip[4]) / (-view.prp.z + view.clip[5]);
     
     var tem0 = Vector4(pt0.x, pt0.y, pt0.z, 1);
     var tem1 = Vector4(pt1.x, pt1.y, pt1.z, 1);
-    
+
 	var outcode0 = GetOutCode(tem0, view);
 	var outcode1 = GetOutCode(tem1, view);
     
@@ -487,29 +478,30 @@ function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
 	var bot_t;
 	var front_t;
 	var back_t;
-    
-    if (view.type === "parallel") {
-        left_t = (-1-tem0.x)/delta_x;
-        right_t = (1-tem0.x)/delta_x;
-        top_t = (1-tem0.y)/delta_y;
-        bot_t = (-1-tem0.y)/delta_y;
-        front_t = -tem0.z/delta_z;
-        back_t = (-1-tem0.z)/delta_z;
-	}
-    else if (view.type === "perspective") {
-        left_t = (-tem0.x+tem0.z)/(delta_x-delta_z);
-        right_t = (tem0.x+tem0.z)/(-delta_x-delta_z);
-        top_t = (tem0.y+tem0.z)/(-delta_y-delta_z);
-        bot_t = (-tem0.y+tem0.z)/(delta_y-delta_z);
-        front_t = (tem0.z-Z_min)/-delta_z;
-        back_t = (-tem0.z-1)/delta_z;
-	}
-    
+
     var done = false;
 	var selectedPoint;
     var selectedOutcode;
     
 	while (!done) {
+
+        if (view.type === "parallel") {
+            left_t = (-1-tem0.x)/delta_x;
+            right_t = (1-tem0.x)/delta_x;
+            top_t = (1-tem0.y)/delta_y;
+            bot_t = (-1-tem0.y)/delta_y;
+            front_t = -tem0.z/delta_z;
+            back_t = (-1-tem0.z)/delta_z;
+        }
+        else if (view.type === "perspective") {
+            left_t = (-tem0.x+tem0.z)/(delta_x-delta_z);
+            right_t = (tem0.x+tem0.z)/(-delta_x-delta_z);
+            top_t = (tem0.y+tem0.z)/(-delta_y-delta_z);
+            bot_t = (-tem0.y+tem0.z)/(delta_y-delta_z);
+            front_t = (tem0.z-Z_min)/-delta_z;
+            back_t = (-tem0.z-1)/delta_z;
+        }
+
 		if ((outcode0 | outcode1) === 0) { // trivial accept
 			done  = true;
 			result.pt0.x = tem0.x;
@@ -518,9 +510,11 @@ function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
 			result.pt1.x = tem1.x;
 			result.pt1.y = tem1.y;
 			result.pt1.z = tem1.z;
+            // console.log("trivial accept")
 		}
 		else if ((outcode0 & outcode1) !== 0) { // trivial reject
 			done = true;
+            // console.log("trivial reject")
             return null;
 		}
 		else {
@@ -528,42 +522,74 @@ function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
 			if (outcode0 > 0) {
 				selectedPoint = tem0;
 				selectedOutcode = outcode0;
+                console.log("taking outcode0");
 			}
 			else {
 				selectedPoint = tem1;
 				selectedOutcode = outcode1;
+                console.log("taking outcode1");
 			}
-			if ((selectedOutcode & Left) === Left) {
+            if ((selectedOutcode & Front) === Front) {
+                selectedPoint.x = tem0.x + front_t * delta_x;
+                selectedPoint.y = tem0.y + front_t * delta_y;
+                selectedPoint.z = tem0.z + front_t * delta_z;
+                console.log("hit front");
+            }
+            else if ((selectedOutcode & Back) === Back) {
+                selectedPoint.x = tem0.x + back_t * delta_x;
+                selectedPoint.y = tem0.y + back_t * delta_y;
+                selectedPoint.z = tem0.z + back_t * delta_z;
+                console.log("hit back");
+            }
+			else if ((selectedOutcode & Left) === Left) {
 				selectedPoint.x = tem0.x + left_t * delta_x;
 				selectedPoint.y = tem0.y + left_t * delta_y;
 				selectedPoint.z = tem0.z + left_t * delta_z;
+                console.log("hit left");
 			}
-			else if ((selectedOutcode & Right) === Right) {  
+			else if ((selectedOutcode & Right) === Right) {
+
+                console.log("");
+                console.log("tem0.x: " + JSON.stringify(tem0.x));
+                console.log("tem0.y: "+ JSON.stringify(tem0.y));
+                console.log("tem0.z: "+ JSON.stringify(tem0.z));
+
+                console.log("");
+                console.log("right_t befor: " + JSON.stringify(right_t));
+
+                console.log("");
+                console.log("selectedPoint.x befor: " + JSON.stringify(selectedPoint.x));
+                console.log("selectedPoint.y befor: "+ JSON.stringify(selectedPoint.y));
+                console.log("selectedPoint.z befor: "+ JSON.stringify(selectedPoint.z));
+
 				selectedPoint.x = tem0.x + right_t * delta_x;
 				selectedPoint.y = tem0.y + right_t * delta_y;
 				selectedPoint.z = tem0.z + right_t * delta_z;
+
+                console.log("");
+                console.log("right_t after: " + JSON.stringify(right_t));
+
+                console.log("");
+                console.log("selectedPoint.x after: " + JSON.stringify(selectedPoint.x));
+                console.log("selectedPoint.y after: "+ JSON.stringify(selectedPoint.y));
+                console.log("selectedPoint.z after: "+ JSON.stringify(selectedPoint.z));
+
+                console.log("hit right");
 			}
 			else if ((selectedOutcode & Bottom) === Bottom) {
                 selectedPoint.x = tem0.x + bot_t * delta_x;
 				selectedPoint.y = tem0.y + bot_t * delta_y;
 				selectedPoint.z = tem0.z + bot_t * delta_z;
+				console.log("hit bottom");
 			}
 			else if ((selectedOutcode & Top) === Top) {
 				selectedPoint.x = tem0.x + top_t * delta_x;
                 selectedPoint.y = tem0.y + top_t * delta_y;
 				selectedPoint.z = tem0.z + top_t * delta_z;
-			}
-			else if ((selectedOutcode & Front) === Front) {
-				selectedPoint.x = tem0.x + front_t * delta_x;
-				selectedPoint.y = tem0.y + front_t * delta_y;
-				selectedPoint.z = tem0.z + front_t * delta_z;
-			}
-			else if ((selectedOutcode & Back) === Back) {
-				selectedPoint.x = tem0.x + back_t * delta_x;
-				selectedPoint.y = tem0.y + back_t * delta_y;
-				selectedPoint.z = tem0.z + back_t * delta_z;
+                console.log("hit top");
 			}
 
+            console.log("befor 3");
 			selectedOutcode = GetOutCode(selectedPoint, view);
 			if (outcode0 > 0) {
 				outcode0 = selectedOutcode;
@@ -571,6 +597,7 @@ function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
 			else {
 				outcode1 = selectedOutcode;
 			}
+            console.log("selectedOutcode: " + JSON.stringify(selectedOutcode))
 		}
 	}
     
