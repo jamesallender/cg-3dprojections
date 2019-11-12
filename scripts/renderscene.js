@@ -403,9 +403,7 @@ var Back = 1;    // 000001
 function GetOutCode(pt, view) {
     console.log("GetOutCode");
 	var outCode = 0;
-    //var Z_min = -(-view.prp.z + view.clip[4]) / (-view.prp.z + view.clip[5]);
-    var Z_min = -(-pt.z + view.clip[4]) / (-pt.z + view.clip[5]);
-
+    var Z_min = -(-view.prp.z + view.clip[4]) / (-view.prp.z + view.clip[5]);
 
     let epsilon = 0.000000001;
     if (view.type === "parallel") {
