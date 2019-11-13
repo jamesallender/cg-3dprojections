@@ -27,12 +27,8 @@ function Init() {
             {
                 type: 'generic',
                 animation: {
-                axis: "y",
-                rps: 1,
-                animation: {
-                    axis: "y",
-                    rps: 1
-                    }
+                    axis: "z",
+                    rps: .1,
                 },
                 vertices: [
                     Vector4( 0,  0, -30, 1),
@@ -67,6 +63,7 @@ function Init() {
 
 var past_time = new Date().getTime();
 var current_time = new Date().getTime();
+
 
 // Main drawing code here! Use information contained in variable `scene`
 function DrawScene() {
@@ -136,38 +133,44 @@ function DrawScene() {
         z_avg = ((z_min + z_max) / 2);
 
         for (let k = 0; k < scene.models[j].vertices.length; k++) {
-            past_time = current_time;
+            // past_time = current_time;
             current_time = new Date().getTime();
             let time_delta = current_time - past_time;
 
             let rot_axis = scene.models[j].animation.axis;
             let rot_rate = scene.models[j].animation.rps;
 
-            console.log("time_delta: " + JSON.stringify(time_delta));
-            console.log("rot_axis: " + JSON.stringify(rot_axis));
-            console.log("rot_rate: " + JSON.stringify(rot_rate));
-            console.log("rot_rate/time_delta: " + JSON.stringify(rot_rate/time_delta));
-
-
-            let x_rad = 0;
-            let y_rad = 0;
-            let z_rad = 0;
+            // console.log("time_delta: " + JSON.stringify(time_delta));
+            // console.log("rot_axis: " + JSON.stringify(rot_axis));
+            // console.log("rot_rate: " + JSON.stringify(rot_rate));
+            var x_rad = 0;
+            var y_rad = 0;
+            var z_rad = 0;
 
             if (time_delta !== 0) {
                 if (rot_axis === "x") {
-                    x_rad = ((2 * Math.PI) / (1000 * rot_rate * time_delta));
+                    x_rad = ((2 * Math.PI) * (rot_rate * time_delta/1000));
+                    // if (x_rad > 2 * Math.PI){
+                    //     x_rad = 0;
+                    // }
                 }
                 if (rot_axis === "y") {
-                    y_rad = ((2 * Math.PI) / (1000 * rot_rate * time_delta));
+                    y_rad = ((2 * Math.PI) * (rot_rate * time_delta/1000));
+                    // if (y_rad > 2 * Math.PI){
+                    //     y_rad = 0;
+                    // }
                 }
                 if (rot_axis === "z") {
-                    z_rad = ((2 * Math.PI) / (1000 * rot_rate * time_delta));
+                    z_rad = ((2 * Math.PI) *  (rot_rate * time_delta/1000));
+                    // if (z_rad > 2 * Math.PI){
+                    //     z_rad = 0;
+                    // }
                 }
             }
 
-            console.log("x_rad: " + JSON.stringify(x_rad));
-            console.log("y_rad: " + JSON.stringify(y_rad));
-            console.log("z_rad: " + JSON.stringify(z_rad));
+            // console.log("x_rad: " + JSON.stringify(x_rad));
+            // console.log("y_rad: " + JSON.stringify(y_rad));
+            // console.log("z_rad: " + JSON.stringify(z_rad));
 
             let px = scene.models[j].vertices[k].x;
             let py = scene.models[j].vertices[k].y;
@@ -179,7 +182,7 @@ function DrawScene() {
                                              mat4x4rotatez(z_rad),
                                              mat4x4translate(-x_avg, -y_avg, -z_avg));
 
-            console.log("rotatemtx: " + JSON.stringify(rotate_mtx));
+            // console.log("rotatemtx: " + JSON.stringify(rotate_mtx));
 
             if (scene.view.type === "perspective") {
                 beforeClip[j][k] = Matrix.multiply(Nper, rotate_mtx, scene.models[j].vertices[k]);
@@ -242,7 +245,7 @@ function LoadNewScene() {
         scene.view.prp = Vector3(scene.view.prp[0], scene.view.prp[1], scene.view.prp[2]);
 
         for (let i = 0; i < scene.models.length; i++) {
-            console.log("Working on: " + JSON.stringify(scene.models[i].type));
+            // console.log("Working on: " + JSON.stringify(scene.models[i].type));
 
             //Generic model
             if (scene.models[i].type === 'generic') {
@@ -426,24 +429,24 @@ function OnKeyDown(event) {
 	
     switch (event.keyCode) {
         case 37: // LEFT Arrow
-            console.log("left");
+            // console.log("left");
 			scene.view.vrp = scene.view.vrp.subtract(u_axis);
-            DrawScene();
+            // DrawScene();
             break;
         case 38: // UP Arrow
-            console.log("up");
+            // console.log("up");
 			scene.view.vrp = scene.view.vrp.subtract(scene.view.vpn);
-            DrawScene();
+            // DrawScene();
             break;
         case 39: // RIGHT Arrow
-            console.log("right");
+            // console.log("right");
 			scene.view.vrp = scene.view.vrp.add(u_axis);
-            DrawScene();
+            // DrawScene();
             break;
         case 40: // DOWN Arrow
-            console.log("down");
+            // console.log("down");
 			scene.view.vrp = scene.view.vrp.add(scene.view.vpn);
-            DrawScene();
+            // DrawScene();
             break;
     }
 }
@@ -462,27 +465,27 @@ function GetOutCode(pt, view) {
 
     let epsilon = 0.000000001;
     if (view.type === "parallel") {
-        if (pt.x < -1-epsilon) {
+        if (pt.x < -1 - epsilon) {
             outCode += Left;
         }
-        else if (pt.x > 1+epsilon) {
+        else if (pt.x > 1 + epsilon) {
             outCode += Right;
         }
-        if (pt.y < -1-epsilon) {
+        if (pt.y < -1 - epsilon) {
             outCode += Bottom;
         }
-        else if (pt.y > 1+epsilon) {
+        else if (pt.y > 1 + epsilon) {
             outCode += Top;
         }
-        if (pt.z > 0+epsilon) {
+        if (pt.z > 0 + epsilon) {
             outCode += Front;
         }
-        else if (pt.z < -1-epsilon) {
+        else if (pt.z < -1 - epsilon) {
             outCode += Back;
         }
     }
     else if (view.type === "perspective") {
-        if (pt.x < pt.z-epsilon) {
+        if (pt.x < pt.z - epsilon) {
             outCode += Left;
         }
         else if (pt.x > -pt.z + epsilon) {
@@ -501,14 +504,13 @@ function GetOutCode(pt, view) {
             outCode += Back;
         }
     }
-      
 	return outCode;
 }
 
 function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
-    // console.log("call clip line");
-    // console.log("pt 0: " + JSON.stringify(pt0));
-    // console.log("pt 1: " + JSON.stringify(pt1));
+    // // console.log("call clip line");
+    // // console.log("pt 0: " + JSON.stringify(pt0));
+    // // console.log("pt 1: " + JSON.stringify(pt1));
 
 	result = {pt0: {}, pt1: {}};
     var vectorResult = [];
@@ -563,11 +565,9 @@ function ClipLine(pt0, pt1, view) { // parallel 3d line clipping
 			result.pt1.x = tem1.x;
 			result.pt1.y = tem1.y;
 			result.pt1.z = tem1.z;
-            // console.log("trivial accept")
 		}
 		else if ((outcode0 & outcode1) !== 0) { // trivial reject
 			done = true;
-            // console.log("trivial reject")
             return null;
 		}
 		else {

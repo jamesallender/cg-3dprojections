@@ -16,7 +16,7 @@
             "depth": 8,
             "animation": {
                 "axis": "y",
-                "rps": 1
+                "rps": 0.1
             }
         }
     ]
